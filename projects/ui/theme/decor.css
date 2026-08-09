@@ -1,0 +1,388 @@
+/* ════════════════════════════════════════════════════════════════════
+   lore decor layer — depth, light and motion on top of the token layer.
+
+   Additive by contract: nothing from tokens.css or components.css is
+   redefined here, and every colour below is derived from an existing
+   semantic token via color-mix() — this sheet introduces no colour of
+   its own. Decorative fills stay at or under 14% alpha, so nothing here
+   creates a new text-on-surface pairing to measure; the measured
+   obligations (--muted-foreground, the destructive pairings, the
+   full-strength --border rules) are consumed, never restated.
+
+   Import order: after tokens.css — every rule below reads its tokens.
+   The class prefix is `lore-`, family-level like everything else in the
+   design language: shared across the lore apps under the same names on
+   purpose. Do not re-prefix.
+
+   Markup contracts — each class is opt-in and composes with utilities:
+
+     .lore-glass          translucent blurred surface for sticky chrome.
+                          Positioning stays with the consumer:
+                          <header class="lore-glass sticky top-0 z-20">.
+                          Where backdrop-filter is unsupported it falls
+                          back to the solid --background.
+
+     .lore-elevated       resting elevation (--shadow-1). The raw tokens
+                          --shadow-1/2/3 are also consumable directly,
+                          e.g. shadow-(--shadow-2) or box-shadow: var().
+
+     .lore-lift           hover lift: translate + shadow step + border
+                          step, moving together. Pair with a bordered
+                          surface — class="lore-elevated lore-lift" on a
+                          bg-card border rounded-lg box.
+
+     .lore-divider        hairline that fades at both ends. Works on
+                          <hr class="lore-divider"> or an empty
+                          <div role="presentation">.
+
+     .lore-glow           ambient corner glows behind a container's
+                          content (3–5% alpha). The container isolates
+                          and the wash sits on a negative-z pseudo, so
+                          it can never tint text.
+
+     .lore-heading-rule   short accent→transparent rule drawn under the
+                          heading it is set on:
+                          <h2 class="text-lg font-semibold lore-heading-rule">.
+
+     .lore-sheen          light bar that sweeps across once on hover.
+                          Needs a bounded box; the sweep is a ::before,
+                          so the host must not rely on its own ::before.
+
+     .lore-enter          one-shot entrance, fade + rise, on insert.
+     .lore-enter-fade     the same entrance without the movement — for
+                          chrome where travel would be noise.
+     .lore-enter-stagger  the rise entrance on each direct child, in
+                          45ms steps, capped from the sixth child so a
+                          long list does not queue for seconds.
+
+     .lore-microlabel     the uppercase micro-label recipe the table
+                          head already uses, extracted for reuse on
+                          non-table chrome (card eyebrows, group
+                          labels). Same tokens; .lore-table's own rules
+                          are untouched.
+
+     .lore-scroll         thin token-coloured scrollbars, set on the
+                          scroller itself (.lore-table-scroll, any
+                          overflow box).
+
+   Everything animated or transformed here is neutralised wholesale
+   under prefers-reduced-motion at the end of the file.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── decor tokens ─────────────────────────────────────────────────────
+   Plain :root variables, not @theme entries, for the same reason as the
+   tier-3 knobs in tokens.css: none of these should mint a utility class.
+
+   Shadows key off --shadow-ink — the ramp's darkest primitive, not the
+   theme's foreground — because a shadow must stay a *darkening* in both
+   themes, and deriving it from --foreground would cast light-grey
+   shadows in dark mode. Alpha is applied per layer via color-mix, soft
+   and large-radius, so elevation reads as depth rather than outline. */
+:root {
+  --motion-slow: 400ms;
+
+  --shadow-ink: var(--gray-950);
+  --shadow-1:
+    0 1px 2px color-mix(in oklab, var(--shadow-ink) 6%, transparent),
+    0 2px 8px color-mix(in oklab, var(--shadow-ink) 5%, transparent);
+  --shadow-2:
+    0 2px 4px color-mix(in oklab, var(--shadow-ink) 7%, transparent),
+    0 10px 24px color-mix(in oklab, var(--shadow-ink) 9%, transparent);
+  --shadow-3:
+    0 6px 12px color-mix(in oklab, var(--shadow-ink) 8%, transparent),
+    0 24px 56px color-mix(in oklab, var(--shadow-ink) 12%, transparent);
+
+  /* Glass: the page surface at 92%, blurred — enough transparency to
+     read as glass, little enough that text on the chrome effectively
+     still sits on the page colour it was measured against. */
+  --glass-bg: color-mix(in oklab, var(--background) 92%, transparent);
+  --glass-blur: 8px;
+
+  /* The border's emphasis step: --border pulled toward --foreground
+     rather than a second grey, so one expression darkens the border in
+     light and lightens it in dark. */
+  --border-strong: color-mix(in oklab, var(--foreground) 15%, var(--border));
+
+  /* Scrollbar thumb, from the border family: quiet at rest, a step
+     toward the foreground under the pointer. */
+  --scroll-thumb: color-mix(in oklab, var(--foreground) 12%, var(--border));
+  --scroll-thumb-hover: color-mix(in oklab, var(--foreground) 28%, var(--border));
+}
+
+/* Dark overrides and re-resolutions — same discipline as tier 2: light
+   on :root first, .dark last. The shadow alphas genuinely differ:
+   gray-950 IS the dark page, so a 6% wash of it disappears against the
+   very surfaces it is meant to lift, and dark elevation needs several
+   times the strength to register. The other four expressions are
+   identical to :root on purpose: a var() inside a custom property
+   resolves where the property is DECLARED, not where it is used, so
+   without this block a scoped dark subtree (`<div class="dark">` — a
+   sanctioned pattern here, see tokens.css) would inherit values that
+   were resolved against the light semantics. */
+.dark {
+  --shadow-1:
+    0 1px 2px color-mix(in oklab, var(--shadow-ink) 30%, transparent),
+    0 2px 8px color-mix(in oklab, var(--shadow-ink) 24%, transparent);
+  --shadow-2:
+    0 2px 4px color-mix(in oklab, var(--shadow-ink) 34%, transparent),
+    0 10px 24px color-mix(in oklab, var(--shadow-ink) 32%, transparent);
+  --shadow-3:
+    0 6px 12px color-mix(in oklab, var(--shadow-ink) 38%, transparent),
+    0 24px 56px color-mix(in oklab, var(--shadow-ink) 40%, transparent);
+
+  --glass-bg: color-mix(in oklab, var(--background) 92%, transparent);
+  --border-strong: color-mix(in oklab, var(--foreground) 15%, var(--border));
+  --scroll-thumb: color-mix(in oklab, var(--foreground) 12%, var(--border));
+  --scroll-thumb-hover: color-mix(in oklab, var(--foreground) 28%, var(--border));
+}
+
+/* Entrance keyframes. Outside @theme deliberately — an --animate-* token
+   would mint utilities, and these are consumed only by the classes
+   below. The rise is 0.5rem: enough to read as arrival, small enough
+   that an element never travels over a neighbour's text. */
+@keyframes lore-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes lore-slide-up {
+  from {
+    opacity: 0;
+    translate: 0 0.5rem;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@layer components {
+  /* ── glass chrome ── */
+  .lore-glass {
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+  }
+
+  /* No blur → no translucency: 92% of the page over unknown scrolled
+     content is a legibility gamble only the blur pays for. Older Safari
+     (prefixed backdrop-filter only) deliberately takes this solid
+     fallback too. */
+  @supports not (backdrop-filter: blur(8px)) {
+    .lore-glass {
+      background-color: var(--background);
+    }
+  }
+
+  /* ── elevation ── */
+  .lore-elevated {
+    box-shadow: var(--shadow-1);
+  }
+
+  /* Three properties move together — translate, shadow, border — because
+     any one alone is ambiguous: a shadow step on its own reads as a
+     repaint, a translate on its own as a glitch. Together they read as
+     the card lifting toward the pointer. */
+  .lore-lift {
+    transition:
+      translate var(--motion-base) var(--ease),
+      box-shadow var(--motion-base) var(--ease),
+      border-color var(--motion-base) var(--ease);
+  }
+
+  .lore-lift:hover {
+    translate: 0 -2px;
+    box-shadow: var(--shadow-2);
+    border-color: var(--border-strong);
+  }
+
+  /* ── hairline divider, faded at both ends ──
+     Full-strength --border through the middle on purpose: the token is
+     measured for hairlines on these surfaces (components.css records
+     what thinning it to 70% did to the table rules); only the ends fade. */
+  .lore-divider {
+    height: 1px;
+    border: 0;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--border) 18%,
+      var(--border) 82%,
+      transparent
+    );
+  }
+
+  /* ── ambient corner glows ── */
+  .lore-glow {
+    position: relative;
+    /* A stacking context of its own, so the pseudo's z-index: -1 lands
+       between this surface's background and its content — the wash can
+       never sit over text — without escaping behind the page. */
+    isolation: isolate;
+  }
+
+  .lore-glow::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        60% 60% at 0% 0%,
+        color-mix(in oklab, var(--primary) 5%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        50% 50% at 100% 100%,
+        color-mix(in oklab, var(--primary) 3%, transparent),
+        transparent 70%
+      );
+  }
+
+  /* ── gradient heading rule ── */
+  .lore-heading-rule::after {
+    content: '';
+    display: block;
+    width: 2.5rem;
+    height: 2px;
+    margin-block-start: calc(var(--space) * 2);
+    border-radius: 1px;
+    background: linear-gradient(to right, var(--primary), transparent);
+  }
+
+  /* ── hover sheen ──
+     6% of --foreground, not a white bar: the same expression darkens
+     the sweep in light and lightens it in dark, so it stays visible in
+     both themes without a colour of its own. */
+  .lore-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lore-sheen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    translate: -100% 0;
+    pointer-events: none;
+    background: linear-gradient(
+      105deg,
+      transparent 35%,
+      color-mix(in oklab, var(--foreground) 6%, transparent) 50%,
+      transparent 65%
+    );
+  }
+
+  .lore-sheen:hover::before {
+    translate: 100% 0;
+    /* On :hover only: the sweep runs once, and mouse-out snaps the bar
+       home off-canvas instead of sweeping back across the surface. */
+    transition: translate var(--motion-slow) var(--ease);
+  }
+
+  /* ── entrances ── */
+  .lore-enter {
+    animation: lore-slide-up var(--motion-slow) var(--ease) both;
+  }
+
+  .lore-enter-fade {
+    animation: lore-fade-in var(--motion-base) var(--ease) both;
+  }
+
+  /* `both` matters on the children: a delayed child must hold the
+     keyframe's from-state while it waits, or it flashes in place before
+     its own entrance. The delay caps from the sixth child so a long
+     list settles in under half a second instead of queueing. */
+  .lore-enter-stagger > * {
+    animation: lore-slide-up var(--motion-slow) var(--ease) both;
+  }
+
+  .lore-enter-stagger > :nth-child(2) {
+    animation-delay: 45ms;
+  }
+
+  .lore-enter-stagger > :nth-child(3) {
+    animation-delay: 90ms;
+  }
+
+  .lore-enter-stagger > :nth-child(4) {
+    animation-delay: 135ms;
+  }
+
+  .lore-enter-stagger > :nth-child(5) {
+    animation-delay: 180ms;
+  }
+
+  .lore-enter-stagger > :nth-child(n + 6) {
+    animation-delay: 225ms;
+  }
+
+  /* ── micro-label ──
+     The table head's recipe, one token per axis, extracted rather than
+     moved — .lore-table thead th keeps its own rules. The ink is
+     --muted-foreground, whose AA clearance is measured against all
+     three surfaces it lands on (tokens.css); this class adds no new
+     pairing. */
+  .lore-microlabel {
+    font-size: var(--table-head-text);
+    font-weight: 600;
+    letter-spacing: var(--table-head-tracking);
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  /* ── scrollbars ──
+     Both syntaxes on purpose: engines that implement scrollbar-color
+     use it and ignore the ::-webkit-scrollbar rules; Safari before
+     18.2 has only the pseudo-elements. One thumb token feeds both. */
+  .lore-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) transparent;
+  }
+
+  .lore-scroll::-webkit-scrollbar {
+    width: 0.625rem;
+    height: 0.625rem;
+  }
+
+  .lore-scroll::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  .lore-scroll::-webkit-scrollbar-thumb {
+    background-color: var(--scroll-thumb);
+    border-radius: 0.3125rem;
+  }
+
+  .lore-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scroll-thumb-hover);
+  }
+}
+
+/* Every animation, transition and transform this sheet introduces, off
+   in one place. The sheen loses its pseudo entirely rather than being
+   frozen — a stopped sweep is a permanent wash over the surface, which
+   is worse than no sheen. The entrances render at their end state,
+   because removing the animation removes the `both` fill with it. */
+@media (prefers-reduced-motion: reduce) {
+  .lore-lift,
+  .lore-lift:hover {
+    transition: none;
+    translate: none;
+  }
+
+  .lore-sheen::before {
+    content: none;
+  }
+
+  .lore-enter,
+  .lore-enter-fade,
+  .lore-enter-stagger > * {
+    animation: none;
+  }
+}

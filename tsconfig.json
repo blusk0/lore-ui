@@ -12,12 +12,25 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
-    "module": "preserve"
+    "module": "preserve",
+    "paths": {
+      "@lore/ui": ["./projects/ui/src/public-api.ts"],
+      "@lore/ui/helm/*": ["./projects/ui/helm/*/src/index.ts"],
+      "@lore/ui/*": ["./projects/ui/*/src/index.ts"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true
   },
-  "files": []
+  "files": [],
+  "references": [
+    {
+      "path": "./projects/ui/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/ui/tsconfig.spec.json"
+    }
+  ]
 }

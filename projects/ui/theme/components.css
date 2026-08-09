@@ -1,0 +1,411 @@
+/* ════════════════════════════════════════════════════════════════════
+   lore owned component layer — the "helm" styles we control.
+   Controls opt in via .lore-ctl plus data-variant / data-color /
+   data-size attributes (set by directives like LoreButton).
+   Variant rules consume the --vc* channel vars from tokens.css.
+
+   Shared with lore-dam under the same class names on purpose: `.lore-ctl`
+   is the lore family's control, not an app-local one. Do not re-prefix.
+   ════════════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* ── control base ── */
+  .lore-ctl {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--space) * 2);
+    height: var(--control-h-md);
+    padding-inline: calc(var(--space) * 4);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: var(--text-ui-md);
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    user-select: none;
+    cursor: pointer;
+    transition:
+      background-color var(--motion-fast) var(--ease),
+      border-color var(--motion-fast) var(--ease),
+      color var(--motion-fast) var(--ease);
+  }
+
+  .lore-ctl:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  .lore-ctl:disabled,
+  .lore-ctl[data-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* <a> has no native disabled — aria-disabled is set by the directive and the
+     pointer-events guard is what actually makes the link inert. */
+  a.lore-ctl[data-disabled='true'] {
+    pointer-events: none;
+  }
+
+  /* ── size axis ── */
+  .lore-ctl[data-size='sm'] {
+    height: var(--control-h-sm);
+    padding-inline: calc(var(--space) * 3);
+    font-size: var(--text-ui-sm);
+  }
+
+  .lore-ctl[data-size='lg'] {
+    height: var(--control-h-lg);
+    padding-inline: calc(var(--space) * 5);
+    font-size: var(--text-ui-lg);
+  }
+
+  /* ── icon-only sizes: square, no inline padding ──
+     Toolbar / row actions. The 1.5rem (24px) floor is the WCAG 2.2
+     target-size minimum and must hold in compact density too, where
+     --control-h-sm is itself exactly 24px. */
+  .lore-ctl[data-size^='icon-'] {
+    padding-inline: 0;
+    aspect-ratio: 1;
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+  }
+
+  .lore-ctl[data-size='icon-sm'] {
+    width: var(--control-h-sm);
+    height: var(--control-h-sm);
+    font-size: var(--text-ui-sm);
+  }
+
+  .lore-ctl[data-size='icon-md'] {
+    width: var(--control-h-md);
+    height: var(--control-h-md);
+  }
+
+  .lore-ctl[data-size='icon-lg'] {
+    width: var(--control-h-lg);
+    height: var(--control-h-lg);
+    font-size: var(--text-ui-lg);
+  }
+
+  /* ── variant axis (solid / soft / outlined / plain) ── */
+  .lore-ctl[data-variant='solid'] {
+    background-color: var(--vc);
+    color: var(--vc-on);
+  }
+  .lore-ctl[data-variant='solid']:hover:not(:disabled) {
+    background-color: var(--vc-strong);
+  }
+
+  .lore-ctl[data-variant='soft'] {
+    background-color: color-mix(in oklab, var(--vc) 14%, transparent);
+    color: var(--vc-soft-fg);
+  }
+  .lore-ctl[data-variant='soft']:hover:not(:disabled) {
+    background-color: color-mix(in oklab, var(--vc) 22%, transparent);
+  }
+
+  .lore-ctl[data-variant='outlined'] {
+    border-color: color-mix(in oklab, var(--vc) 45%, transparent);
+    color: var(--vc-soft-fg);
+  }
+  .lore-ctl[data-variant='outlined']:hover:not(:disabled) {
+    background-color: color-mix(in oklab, var(--vc) 10%, transparent);
+  }
+
+  .lore-ctl[data-variant='plain'] {
+    color: var(--vc-soft-fg);
+  }
+  .lore-ctl[data-variant='plain']:hover:not(:disabled) {
+    background-color: color-mix(in oklab, var(--vc) 10%, transparent);
+  }
+
+  /* ── chip: same matrix, pill metrics (filters, status pills, tags) ── */
+  .lore-chip {
+    height: auto;
+    min-height: calc(var(--control-h-sm) - var(--space) * 2);
+    padding-block: var(--space);
+    padding-inline: calc(var(--space) * 2.5);
+    border-radius: calc(var(--radius) * 2.6);
+    font-size: var(--text-ui-sm);
+  }
+
+  .lore-chip[data-suggested='true'] {
+    border-style: dashed;
+    border-color: color-mix(in oklab, var(--vc) 55%, transparent);
+  }
+
+  /* ── dense table ──────────────────────────────────────────────────
+     A plain semantic <table>, deliberately not a grid widget: a card surface,
+     a banded sticky header, tight zebra-free rows, right-aligned tabular
+     numerics, and row-level keyboard navigation. Body metrics come from
+     --table-row-h, which pins the compact density tier, and the header from
+     --table-head-h, which does not (tokens.css, tier 3).
+
+     Markup contract — the component binds to exactly these names:
+
+       <div class="lore-table-scroll">
+         <table class="lore-table">
+           <thead>
+             <tr>
+               <th data-sortable aria-sort="ascending">Code</th>
+               <th data-numeric>On hand</th>
+             </tr>
+           </thead>
+           <tbody>
+             <tr tabindex="0" data-active="true" data-selected="false">
+               <td>SKU-1</td>
+               <td data-numeric class="tabular">12.5 g</td>
+             </tr>
+             <tr><td class="lore-table-state" data-state="empty" colspan="2">…</td></tr>
+           </tbody>
+         </table>
+       </div>
+
+     data-state on the state cell names which of the bodies is showing —
+     loading / empty / error. Only `error` is styled differently; the other two
+     are the same quiet grey and need no rule. It is a real part of the contract
+     rather than a debugging hook, because a failure that looks like an empty
+     list is a failure nobody acts on.
+
+     The scroll container is not optional: `position: sticky` resolves
+     against the nearest scrollport, so a header with no .lore-table-scroll
+     around it sticks to the page instead of to the table. It is also THE
+     SURFACE — card fill, hairline, radius, the same idiom the diagnostics card
+     already uses (bg-card + border + rounded-lg). The surface lands on the
+     scrollport rather than on the <table> for reasons that both come back to
+     clipping: a scroll container clips its content to its own border-radius, so
+     the sticky header's top corners and a hovered last row's fill are rounded
+     for free, whereas a <table> does not clip its cells to its radius and the
+     same result there would mean rounding four corner cells by hand and
+     re-doing it whenever a column moves. */
+  .lore-table-scroll {
+    overflow: auto;
+    /* The shell (or the page) bounds the box — a grid row, or max-height.
+       This only makes it the scroller, and keeps a wheel at the end of the
+       list from scrolling the page behind it. */
+    overscroll-behavior: contain;
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+
+    /* Let a SHORT table size to its content while a long one still scrolls.
+       The scrollport is a stretched flex item (`flex-1` in the component), which
+       is right at 200 rows and wrong at 7: the surface grew to the viewport and
+       left several hundred pixels of empty card with the pager stranded under
+       it. A max-height clamps a flex item's used size, and `max-content` is the
+       table's own height — so with few rows the clamp wins and the card ends
+       where the data ends, and with many rows max-content exceeds the space
+       flex offered, the clamp never binds, and the box scrolls exactly as
+       before. Sticky still resolves against this element in both cases; when it
+       has hugged, there is simply nothing to scroll. */
+    max-height: max-content;
+  }
+
+  .lore-table {
+    width: 100%;
+    /* separate + zero spacing, not `collapse`: collapsed borders belong to
+       the table rather than the cell, so they scroll out from under a
+       sticky header and the header loses its underline mid-scroll. */
+    border-collapse: separate;
+    border-spacing: 0;
+    /* Matches .lore-table-scroll so the two agree, and so a table used without
+       the scroll wrapper is still an opaque surface in its own right — the
+       thead chain below inherits from here, not from the container. */
+    background-color: var(--card);
+    font-size: var(--text-ui-md);
+  }
+
+  /* The header must be opaque or rows pass *through* it rather than under.
+     Inheriting the surface down the thead chain means re-surfacing the
+     table — `<table class="lore-table bg-card">` — carries the header with
+     it, no second knob to keep in sync.
+
+     The th itself now paints a --muted band instead of inheriting (see below),
+     so this pair is the backstop rather than the whole story: it keeps thead and
+     its row opaque behind the cells, which is what covers a re-surfaced table
+     and any gap a future border-spacing would open. Both links must stay —
+     `inherit` is a chain, and dropping the middle one silently hands thead's row
+     a transparent background. */
+  .lore-table thead,
+  .lore-table thead tr {
+    background-color: inherit;
+  }
+
+  .lore-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    /* Taller than the rows it labels — see --table-head-h. The old header was
+       --table-row-h, i.e. exactly a body row, and separated from the data only
+       by weight and a hairline; at a glance the table began with an odd first
+       record rather than with a header. */
+    height: var(--table-head-h);
+    padding-inline: calc(var(--space) * 3);
+    /* An opaque fill, not `inherit`. Opacity is what keeps rows scrolling UNDER
+       the sticky header rather than through it, and --muted is opaque in both
+       themes — so the guarantee the inherit chain used to provide is preserved
+       by a stronger means, while the band gets a fill of its own. */
+    background-color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    text-align: start;
+    font-size: var(--table-head-text);
+    font-weight: 600;
+    letter-spacing: var(--table-head-tracking);
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+    white-space: nowrap;
+  }
+
+  .lore-table th[data-sortable] {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .lore-table th[data-sortable]:hover,
+  .lore-table th[aria-sort='ascending'],
+  .lore-table th[aria-sort='descending'] {
+    /* The sorted column stays legible at rest: aria-sort is already the
+       state a screen reader reads, so the styling keys off it instead of a
+       parallel data-* flag that could disagree with it. */
+    color: var(--foreground);
+  }
+
+  /* Body cells cover <th scope="row"> too — a code column is legitimately a
+     row header, and it must not fall out of the row's metrics for it. */
+  .lore-table tbody th,
+  .lore-table tbody td {
+    height: var(--table-row-h);
+    padding-inline: calc(var(--space) * 3);
+    /* --border at full strength. It used to be thinned to 70%, which put the
+       row rules at 1.13:1 in light — the table's only structure, and all but
+       invisible. The thinning was compensating for a hairline drawn against a
+       backdrop at nearly the border token's own luminance; on the card surface
+       the token is simply correct as authored (1.25:1 light, 1.40:1 dark). */
+    border-bottom: 1px solid var(--border);
+    text-align: start;
+    font-weight: 400;
+    vertical-align: middle;
+  }
+
+  /* The surface's own border closes the list, so the last row does not draw a
+     second line 1px inside it. Matters most now that the scrollport hugs a short
+     table: without this the card ends in a visible double rule. */
+  .lore-table tbody tr:last-child > th,
+  .lore-table tbody tr:last-child > td {
+    border-bottom-width: 0;
+  }
+
+  /* Numeric columns: right-aligned with tabular figures so digits line up
+     down the column — the single most useful thing a dense inventory table
+     does. Header takes the same attribute so it aligns with its column.
+     Compose with `.tabular` (theme/index.css) for a mono column. */
+  .lore-table th[data-numeric],
+  .lore-table td[data-numeric] {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Arrow-key navigation must not park a row under the sticky header. Follows
+     --table-head-h, not --table-row-h: the margin has to clear whatever the
+     header actually measures, and those are now two different tokens. */
+  .lore-table tbody tr {
+    scroll-margin-block-start: var(--table-head-h);
+  }
+
+  /* NO zebra striping, deliberately: rows separate by a hairline rule, and
+     fill is reserved for state — so hover, keyboard position and selection
+     read at a glance instead of competing with stripes.
+
+     Three states, three DIFFERENT channels, which is the rule that matters more
+     than any single value here: hover is a neutral fill, the caret is a coloured
+     rule, selection is a coloured fill. They stack without ambiguity because no
+     two of them speak through the same property. Previously hover and the caret
+     were both an --accent fill differing only in strength (1.04:1 and 1.06:1
+     against the page in light) — two states that were each invisible and, where
+     visible, indistinguishable from one another. */
+
+  /* A state layer off --foreground rather than --accent: --accent is only
+     gray-100 in light, which caps a fill on a white card at 1.11:1 no matter how
+     it is mixed. The foreground token inverts with the theme by itself, so one
+     percentage darkens in light and lightens in dark. 1.24:1 light, 1.27:1 dark,
+     from 1.04:1 and 1.16:1. */
+  .lore-table tbody tr:hover {
+    background-color: color-mix(in oklab, var(--foreground) 10%, transparent);
+  }
+
+  /* Keyboard row navigation: the component runs a roving tabindex, so
+     exactly one row is tabbable, and data-active marks where the caret is.
+     The two are separate on purpose — the caret survives the table losing
+     focus, which is what makes "tab back in and carry on" work.
+
+     A caret is a POSITION, so it is drawn as a rule at the row's leading edge
+     rather than as a wash over it — the one treatment a fill can never be
+     mistaken for, and legible on its own terms (5.62:1 light, 4.38:1 dark
+     against the card, where the fill it replaced managed 1.06:1). The faint
+     wash behind it only carries the mark across the row's full width; the rule
+     is what the eye returns to. Distinct from :focus-visible below by design:
+     that ring means "focus is here now", this means "the caret is parked here",
+     and after tabbing away only the second is still true. */
+  .lore-table tbody tr[data-active='true'] {
+    background-color: color-mix(in oklab, var(--primary) 6%, transparent);
+  }
+
+  /* On the first cell, not the row: box-shadow on a <tr> is unreliable across
+     engines, and a cell renders it identically everywhere. Inset, so it eats
+     into the cell's own inline padding instead of displacing the text the way a
+     border-inline-start would. */
+  .lore-table tbody tr[data-active='true'] > :first-child {
+    box-shadow: inset 3px 0 0 0 var(--primary);
+  }
+
+  .lore-table tbody tr[data-selected='true'] {
+    background-color: color-mix(in oklab, var(--primary) 14%, transparent);
+  }
+
+  /* One focus ring for the whole surface, from the same --ring semantic the
+     controls use. Inset, so neither the scrollport nor the sticky header
+     clips it. */
+  .lore-table tbody tr:focus-visible,
+  .lore-table th:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+  }
+
+  /* Loading, empty and error live *inside* the table, not beside it: one
+     <td colspan> keeps the header and the column widths put while the body
+     swaps, so the surface never collapses and re-lays out under the reader. */
+  .lore-table tbody td.lore-table-state {
+    height: calc(var(--table-row-h) * 4);
+    padding: calc(var(--space) * 6);
+    border-bottom: 0;
+    text-align: center;
+    color: var(--muted-foreground);
+  }
+
+  /* A failure should look like a failure. Loading, empty and failed all rendered
+     in the same muted grey, so the one body that means "something is wrong"
+     was typographically identical to the one that means "nothing here yet" —
+     and the difference between those two is the whole message.
+     Keyed off the data-state the component already emits, so no markup changes.
+
+     A wash plus ink, not a solid destructive fill: the body is a large area, and
+     bg-destructive at this size shouts at a maker who mostly needs to read the
+     problem title and the trace id under it. The ink is --destructive-soft-fg
+     rather than --destructive for the reason recorded on that token — bare
+     --destructive on its own wash is 4.06:1 in light and fails AA. This pairing
+     measures 7.28:1 light and 7.80:1 dark. */
+  .lore-table tbody td.lore-table-state[data-state='error'] {
+    background-color: color-mix(in oklab, var(--destructive) 8%, transparent);
+    color: var(--destructive-soft-fg);
+    font-weight: 500;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lore-ctl {
+    transition-duration: 0.01ms;
+  }
+}

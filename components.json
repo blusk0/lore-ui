@@ -1,0 +1,5 @@
+{
+  "componentsPath": "projects/ui/helm",
+  "style": "nova",
+  "importAlias": "@lore/ui/helm"
+}

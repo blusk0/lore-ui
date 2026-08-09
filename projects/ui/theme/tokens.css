@@ -1,0 +1,347 @@
+/* ════════════════════════════════════════════════════════════════════
+   lore design tokens
+   Three tiers: primitives → semantics → component knobs.
+   OKLCH primitives, shadcn/Spartan-compatible semantic names,
+   Joy-inspired variant matrix (variant × color × size),
+   dark-mode-first (light is the derived theme), density as a token.
+
+   This is the shared lore design language — the same architecture and the
+   same token names as lore-dam, so a control written against one repo drops
+   into the other unchanged. Keep the two in sync; do not fork the names.
+
+   Dark is a `dark` class, toggled on <html> by `ThemeStore`
+   (app/core/shell/theme.store.ts). The class — not `html.dark` — is what the
+   Spartan preset's `@custom-variant dark (&:is(.dark *))` keys off, so the
+   token swap and the `dark:` utilities always agree.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Tier 1: primitives ─────────────────────────────────────────── */
+:root {
+  /* warm-gray neutral ramp.
+     gray-500 is the one step pinned by a contrast obligation rather than by the
+     ramp's own even spacing: it is light --muted-foreground, and it has to clear
+     4.5:1 on *every* surface that carries secondary text — the page, a card, and
+     the table header's --muted band. The band is the binding one; see
+     --muted-foreground below for the measurements. */
+  --gray-50: oklch(0.985 0.002 75);
+  --gray-100: oklch(0.965 0.003 75);
+  --gray-200: oklch(0.925 0.004 75);
+  --gray-300: oklch(0.87 0.005 75);
+  --gray-400: oklch(0.71 0.006 75);
+  --gray-500: oklch(0.54 0.007 75);
+  --gray-600: oklch(0.46 0.007 75);
+  --gray-700: oklch(0.375 0.006 75);
+  --gray-800: oklch(0.28 0.005 75);
+  --gray-850: oklch(0.24 0.005 75);
+  --gray-900: oklch(0.205 0.005 75);
+  --gray-950: oklch(0.155 0.004 75);
+
+  /* accent — Joy-flavored blue */
+  --primary-300: oklch(0.78 0.11 250);
+  --primary-400: oklch(0.68 0.15 250);
+  --primary-500: oklch(0.59 0.18 250);
+  --primary-600: oklch(0.51 0.19 250);
+  --primary-700: oklch(0.45 0.17 250);
+
+  /* status hues */
+  --danger-300: oklch(0.78 0.11 25);
+  --danger-400: oklch(0.68 0.17 25);
+  --danger-500: oklch(0.59 0.21 25);
+  --danger-600: oklch(0.52 0.21 25);
+  --danger-700: oklch(0.45 0.18 25);
+
+  --success-300: oklch(0.8 0.1 150);
+  --success-400: oklch(0.7 0.13 150);
+  --success-500: oklch(0.6 0.14 150);
+  --success-600: oklch(0.52 0.13 150);
+  --success-700: oklch(0.45 0.11 150);
+
+  --warning-300: oklch(0.85 0.11 80);
+  --warning-400: oklch(0.79 0.14 75);
+  --warning-500: oklch(0.72 0.15 70);
+  --warning-600: oklch(0.62 0.14 65);
+  --warning-700: oklch(0.52 0.12 60);
+
+  /* type & shape & motion */
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  --radius: 0.5rem;
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ── Tier 1.5: density (spacing & control metrics as tokens) ────── */
+
+/* Row height for dense list surfaces (table rows, rail items), named per
+   tier as well as applied by tier. A surface that must pin one tier
+   regardless of the page's density — the table does, see --table-row-h —
+   references the constant; everything else takes --row-h and follows the
+   page, exactly like --control-h-* does. */
+:root {
+  --row-h-comfortable: 2.25rem;
+  --row-h-compact: 1.75rem;
+}
+
+:root,
+[data-density='comfortable'] {
+  --space: 0.25rem;
+  --control-h-sm: 1.75rem;
+  --control-h-md: 2.25rem;
+  --control-h-lg: 2.75rem;
+  --text-ui-sm: 0.75rem;
+  --text-ui-md: 0.8125rem;
+  --text-ui-lg: 0.875rem;
+  --row-h: var(--row-h-comfortable);
+}
+
+[data-density='compact'] {
+  --space: 0.1875rem;
+  --control-h-sm: 1.5rem;
+  --control-h-md: 2rem;
+  --control-h-lg: 2.375rem;
+  --row-h: var(--row-h-compact);
+}
+
+/* ── Tier 2: semantics — light (the derived theme) ──────────────────
+   NOTE: light must be authored on :root BEFORE the .dark block —
+   :root and .dark tie on specificity and both match <html class="dark">,
+   so whichever comes later wins. Dark is the designed theme and must
+   stay last. */
+:root {
+  --background: var(--gray-50);
+  --foreground: var(--gray-900);
+  --card: white;
+  --card-foreground: var(--gray-900);
+  --popover: white;
+  --popover-foreground: var(--gray-900);
+  --primary: var(--primary-600);
+  --primary-foreground: white;
+  --secondary: var(--gray-100);
+  --secondary-foreground: var(--gray-800);
+  --muted: var(--gray-100);
+  /* Carries almost every piece of secondary text on screen — page subtitles,
+     unsorted column headers, the pager caption, the table's own empty/loading
+     bodies — so it is measured against all three surfaces it can land on, not
+     just the page:
+         page (gray-50)          4.86:1
+         card (white)            5.07:1
+         --muted band (gray-100) 4.58:1   ← the binding constraint
+     gray-500 at L 0.56 measured 4.46 on the page and 4.21 on the band, failing
+     AA on both. L 0.55 clears the page (4.65) and still fails the band (4.39),
+     which is why the ramp step is 0.54 and not the nearer-looking 0.55. */
+  --muted-foreground: var(--gray-500);
+  --accent: var(--gray-100);
+  --accent-foreground: var(--gray-800);
+  --destructive: var(--danger-500);
+  /* light --destructive is a mid-dark red → white ink (4.57:1, AA) */
+  --destructive-foreground: white;
+  /* Readable destructive ink for a *tinted* surface, as opposed to a solid fill.
+     --destructive-foreground answers "what sits on bg-destructive"; this answers
+     "what sits on a faint wash of it" — the table's failure body, and any soft
+     danger surface after it. The two cannot be the same token: white ink on an
+     8% wash is unreadable, and --destructive itself only manages 4.06:1 there —
+     below AA, which is what rules out the obvious `color: var(--destructive)`.
+     Same idiom and same job as --vc-soft-fg in the variant matrix below, which
+     is where the name comes from. On the failure body's wash: 7.28:1. */
+  --destructive-soft-fg: var(--danger-700);
+  /* warning: the amber ramp is intrinsically light, so (unlike destructive)
+     it takes dark ink in BOTH themes. Light uses warning-600 so `text-warning`
+     (icon/accent) carries on white/tint; the solid fill pairs with deep ink. */
+  --warning: var(--warning-600);
+  --warning-foreground: oklch(0.22 0.03 75);
+  --border: var(--gray-200);
+  --input: var(--gray-200);
+  --ring: var(--primary-500);
+  --sidebar: var(--gray-100);
+  --sidebar-foreground: var(--gray-700);
+  --sidebar-primary: var(--primary-600);
+  --sidebar-primary-foreground: white;
+  --sidebar-accent: var(--gray-200);
+  --sidebar-accent-foreground: var(--gray-800);
+  --sidebar-border: var(--gray-200);
+  --sidebar-ring: var(--primary-500);
+}
+
+/* ── Tier 2: semantics — DARK is the designed theme ─────────────── */
+.dark {
+  --background: var(--gray-950);
+  --foreground: oklch(0.92 0.003 75);
+  --card: var(--gray-900);
+  --card-foreground: oklch(0.92 0.003 75);
+  --popover: var(--gray-850);
+  --popover-foreground: oklch(0.92 0.003 75);
+  --primary: var(--primary-500);
+  --primary-foreground: white;
+  --secondary: var(--gray-800);
+  --secondary-foreground: var(--gray-100);
+  --muted: var(--gray-800);
+  --muted-foreground: var(--gray-400);
+  --accent: var(--gray-800);
+  --accent-foreground: var(--gray-100);
+  --destructive: var(--danger-400);
+  /* dark --destructive is a LIGHT red — white ink fails AA here (3.11:1).
+     Deep tinted ink instead (5.61:1), matching the --vc-on idiom used by warning. */
+  --destructive-foreground: oklch(0.22 0.03 25);
+  /* Mirrors the light rule and inverts with the theme exactly as --vc-soft-fg
+     does: the wash is dark here, so the ink is the LIGHT end of the danger ramp
+     rather than the deep end. On the failure body's wash: 7.80:1. */
+  --destructive-soft-fg: var(--danger-300);
+  /* dark warning lifts to warning-400 so the amber accent separates from the
+     dark surface; ink stays deep (same --vc-on as light, mirroring data-color). */
+  --warning: var(--warning-400);
+  --warning-foreground: oklch(0.22 0.03 75);
+  --border: oklch(0.32 0.005 75);
+  --input: oklch(0.32 0.005 75);
+  --ring: var(--primary-400);
+  --sidebar: var(--gray-900);
+  --sidebar-foreground: var(--gray-300);
+  --sidebar-primary: var(--primary-500);
+  --sidebar-primary-foreground: white;
+  --sidebar-accent: var(--gray-800);
+  --sidebar-accent-foreground: var(--gray-100);
+  --sidebar-border: oklch(0.32 0.005 75);
+  --sidebar-ring: var(--primary-400);
+}
+
+/* ── Tier 2b: token→utility registration for what the preset omits ──
+   The hlm preset's @theme inline maps --color-destructive but NOT
+   --color-destructive-foreground (it is the one surface token in the
+   required set whose pair the preset leaves unmapped). Register it here
+   so `bg-destructive`'s partner utility actually resolves; without this
+   the variable exists but `text-destructive-foreground` is not a class.
+
+   warning is not in the preset AT ALL — neither --color-warning nor its
+   foreground — so both are registered here, the same inline idiom, off the
+   --warning / --warning-foreground semantics above. This mints the base
+   family only (`bg-warning`, `text-warning`, `border-warning`,
+   `text-warning-foreground`, and their /opacity modifiers); the numeric
+   scale (`text-warning-600` …) is deliberately absent, matching every other
+   semantic colour here (destructive/primary/success are single-token — the
+   --warning-300…700 primitives live outside the --color-* namespace on
+   purpose and generate no utilities).
+
+   --destructive-soft-fg is deliberately NOT here. It is consumed once, by
+   components.css, through var() — registering it would mint a
+   `text-destructive-soft-fg` utility nobody asked for, and the rule is that
+   @theme is for tokens that should become classes. Same reason --space,
+   --control-h-* and the tier 3 knobs below are plain :root variables. */
+@theme inline {
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+}
+
+/* ── Tier 3: component knobs — the app shell & the dense table ─────
+   The layout metrics the shell's CSS grid reads. Plain :root variables
+   rather than @theme entries on purpose: they mint no utilities and are
+   consumed either from component CSS (`width: var(--rail-w-expanded)`) or
+   as a v4 variable utility (`w-(--rail-w-expanded)`) — the same way
+   --space and --control-h-* are already consumed. Nothing here is a colour,
+   so nothing here is redefined under `.dark` — the layout is identical in
+   both themes and there is no second block to keep in sync. */
+:root {
+  /* Navigation rail. Expanded carries icon + label; collapsed carries an
+     icon-md control (2.25rem) plus its 2px focus ring and offset without
+     clipping — 2.75rem is the floor, and the value below leaves it room. */
+  --rail-w-expanded: 14rem;
+  --rail-w-collapsed: 3.25rem;
+
+  /* Top bar: one --control-h-md control plus breathing room and no more.
+     The vertical budget belongs to rows, not to chrome. */
+  --top-bar-h: 3rem;
+
+  /* The reading column for form and detail pages. A table surface opts out
+     (`max-w-none`) and spans the viewport — scanning wants the width. */
+  --content-max-w: 90rem;
+
+  /* The table's row height names a DENSITY TIER, not a measurement. Tables
+     pin the compact tier while forms keep the page's comfortable one
+     (plan 030, open question 1): a maker scanning 200 lots wants rows, not
+     padding. That taste call is the one line below — point it at
+     var(--row-h-comfortable) to loosen every table at once, or at
+     var(--row-h) to make tables follow the page's density instead. */
+  --table-row-h: var(--row-h-compact);
+
+  /* The header row is the one row that does NOT take the compact tier. A header
+     that measures the same as the rows it labels stops reading as a header — it
+     becomes row zero — so it takes the comfortable tier while the body keeps the
+     compact one. Naming the sibling token rather than restating 2.25rem is the
+     point: the two tiers stay a pair, and re-pointing --table-row-h at
+     comfortable collapses the distinction on purpose rather than by accident. */
+  --table-head-h: var(--row-h-comfortable);
+
+  /* Header type: smaller than the body it labels, and uppercase to buy the
+     distinction back. A column label is scanned once to locate a column and then
+     ignored, which is the case uppercase suits and running text does not. The
+     tracking is not decoration — uppercase sets too tight at this size without
+     it. Below --text-ui-sm (0.75rem) on purpose; the size axis is what stops the
+     band from competing with the data. */
+  --table-head-text: 0.6875rem;
+  --table-head-tracking: 0.06em;
+}
+
+/* ── Tier 3: the variant-matrix color axis (the Joy inheritance) ──
+   Each data-color sets four channel vars; variant rules in
+   components.css consume them. --vc = the color, --vc-strong = its
+   hover/emphasis step, --vc-soft-fg = readable fg for tinted
+   surfaces, --vc-on = fg on solid fills.                            */
+
+[data-color='primary'] {
+  --vc: var(--primary-600);
+  --vc-strong: var(--primary-700);
+  --vc-soft-fg: var(--primary-700);
+  --vc-on: white;
+}
+[data-color='neutral'] {
+  --vc: var(--gray-600);
+  --vc-strong: var(--gray-700);
+  --vc-soft-fg: var(--gray-700);
+  --vc-on: white;
+}
+[data-color='danger'] {
+  --vc: var(--danger-600);
+  --vc-strong: var(--danger-700);
+  --vc-soft-fg: var(--danger-700);
+  --vc-on: white;
+}
+[data-color='success'] {
+  --vc: var(--success-600);
+  --vc-strong: var(--success-700);
+  --vc-soft-fg: var(--success-700);
+  --vc-on: white;
+}
+[data-color='warning'] {
+  --vc: var(--warning-500);
+  --vc-strong: var(--warning-600);
+  --vc-soft-fg: var(--warning-700);
+  --vc-on: oklch(0.22 0.03 75);
+}
+
+.dark [data-color='primary'] {
+  --vc: var(--primary-500);
+  --vc-strong: var(--primary-400);
+  --vc-soft-fg: var(--primary-300);
+}
+.dark [data-color='neutral'] {
+  --vc: var(--gray-200);
+  --vc-strong: white;
+  --vc-soft-fg: var(--gray-200);
+  --vc-on: var(--gray-900);
+}
+.dark [data-color='danger'] {
+  --vc: var(--danger-500);
+  --vc-strong: var(--danger-400);
+  --vc-soft-fg: var(--danger-300);
+}
+.dark [data-color='success'] {
+  --vc: var(--success-500);
+  --vc-strong: var(--success-400);
+  --vc-soft-fg: var(--success-300);
+}
+.dark [data-color='warning'] {
+  --vc: var(--warning-500);
+  --vc-strong: var(--warning-400);
+  --vc-soft-fg: var(--warning-300);
+  --vc-on: oklch(0.22 0.03 75);
+}
