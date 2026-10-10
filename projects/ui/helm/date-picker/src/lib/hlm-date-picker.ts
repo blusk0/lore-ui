@@ -10,19 +10,28 @@ import {
   LOCALE_ID,
   output,
   viewChild,
+  viewChildren,
 } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideCalendar, lucideChevronLeft, lucideChevronRight } from '@ng-icons/lucide';
+import {
+  lucideCalendar,
+  lucideCheck,
+  lucideChevronDown,
+  lucideChevronLeft,
+  lucideChevronRight,
+} from '@ng-icons/lucide';
 import {
   BrnCalendar,
   BrnCalendarGrid,
   BrnCalendarHeader,
+  BrnCalendarMonthSelect,
   BrnCalendarNextButton,
   BrnCalendarPreviousButton,
   type BrnCalendarBase,
   BrnCalendarToken,
   BrnCalendarWeek,
   BrnCalendarWeekday,
+  BrnCalendarYearSelect,
   BrnCalendarCellButton,
   injectBrnCalendarI18n,
 } from '@spartan-ng/brain/calendar';
@@ -41,9 +50,21 @@ import {
   provideBrnPopoverConfig,
   provideBrnPopoverDefaultOptions,
 } from '@spartan-ng/brain/popover';
+import {
+  BrnSelectBaseToken,
+  BrnSelectContent,
+  BrnSelectItem,
+  BrnSelectItemToken,
+  BrnSelectList,
+  BrnSelectTrigger,
+} from '@spartan-ng/brain/select';
 import { HlmField } from '@lore/ui/helm/field';
-import { classes, hlm } from '@lore/ui/helm/utils';
+import { HlmSelect } from '@lore/ui/helm/select';
+import { activeDescendantId, classes, hlm } from '@lore/ui/helm/utils';
 import { fromDateOnly, toDateOnly } from './date-only';
+
+/** How far the year select reaches either side of today's year (135 D3). */
+const YEAR_REACH = 10;
 
 /** Shared per locale, because building an `Intl.DateTimeFormat` is the slow part. */
 const triggerFormatters = new Map<string, Intl.DateTimeFormat>();
@@ -185,6 +206,13 @@ function triggerFormatter(locale: string): Intl.DateTimeFormat {
     BrnCalendarWeek,
     BrnCalendarWeekday,
     BrnCalendarCellButton,
+    BrnCalendarMonthSelect,
+    BrnCalendarYearSelect,
+    BrnSelectContent,
+    BrnSelectItem,
+    BrnSelectList,
+    BrnSelectTrigger,
+    HlmSelect,
     BrnFieldControlDescribedBy,
   ],
   // `BrnFieldControl` is what registers the labelable below with the enclosing
@@ -193,7 +221,13 @@ function triggerFormatter(locale: string): Intl.DateTimeFormat {
   // reached the same way they reach it.
   hostDirectives: [BrnFieldControl],
   providers: [
-    provideIcons({ lucideCalendar, lucideChevronLeft, lucideChevronRight }),
+    provideIcons({
+      lucideCalendar,
+      lucideCheck,
+      lucideChevronDown,
+      lucideChevronLeft,
+      lucideChevronRight,
+    }),
     // See the class comment. This one line is the difference between a control
     // that records the day a maker clicked and one that records the day before.
     provideUtcDateAdapter(),
@@ -271,10 +305,89 @@ function triggerFormatter(locale: string): Intl.DateTimeFormat {
             <!--
               brain makes this a polite live region, so pressing the arrows
               announces the month a maker has moved to. It is also what names
-              the grid, through the aria-labelledby brain binds there.
+              the grid, through the aria-labelledby brain binds there. The two
+              selects beside it say the same month on screen, so it is read but
+              not drawn.
             -->
-            <div brnCalendarHeader [id]="headerId" class="text-sm font-medium">
+            <div brnCalendarHeader [id]="headerId" class="sr-only">
               {{ _monthLabel() }}
+            </div>
+
+            <!--
+              A month and a year to jump to (135 D3), through brain's own select
+              directives. Both move only the month on show; a day is still chosen
+              only by picking it. brnFieldControlDescribedBy is left off these
+              triggers on purpose: the field's hint and messages describe the
+              date, not the month or year on show.
+            -->
+            <div class="flex items-center gap-1">
+              <hlm-select brnCalendarMonthSelect #monthSelect>
+                <button
+                  brnSelectTrigger
+                  data-slot="date-picker-month"
+                  aria-label="Month"
+                  [class]="_captionSelectClass()"
+                  [attr.aria-activedescendant]="_monthCaret()"
+                  [attr.aria-controls]="_monthList() ? monthListId : null"
+                >
+                  <span>{{ _monthName() }}</span>
+                  <ng-icon name="lucideChevronDown" aria-hidden="true" class="text-sm" />
+                </button>
+                <ng-template brnPopoverContent>
+                  <div brnSelectContent [class]="_listPanelClass()">
+                    <div
+                      brnSelectList
+                      #monthList
+                      [id]="monthListId"
+                      aria-label="Months"
+                      class="flex flex-col"
+                    >
+                      @for (month of _months(); track month) {
+                        <div brnSelectItem [value]="month" [class]="_optionClass()">
+                          <span>{{ month }}</span>
+                          @if (month === _monthName()) {
+                            <ng-icon name="lucideCheck" aria-hidden="true" class="text-sm" />
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </ng-template>
+              </hlm-select>
+
+              <hlm-select brnCalendarYearSelect #yearSelect>
+                <button
+                  brnSelectTrigger
+                  data-slot="date-picker-year"
+                  aria-label="Year"
+                  [class]="_captionSelectClass()"
+                  [attr.aria-activedescendant]="_yearCaret()"
+                  [attr.aria-controls]="_yearList() ? yearListId : null"
+                >
+                  <span>{{ _focusedYear() }}</span>
+                  <ng-icon name="lucideChevronDown" aria-hidden="true" class="text-sm" />
+                </button>
+                <ng-template brnPopoverContent>
+                  <div brnSelectContent [class]="_listPanelClass()">
+                    <div
+                      brnSelectList
+                      #yearList
+                      [id]="yearListId"
+                      aria-label="Years"
+                      class="flex flex-col"
+                    >
+                      @for (year of _years(); track year) {
+                        <div brnSelectItem [value]="year" [class]="_optionClass()">
+                          <span>{{ year }}</span>
+                          @if (year === _focusedYear()) {
+                            <ng-icon name="lucideCheck" aria-hidden="true" class="text-sm" />
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </ng-template>
+              </hlm-select>
             </div>
 
             <button brnCalendarNextButton [class]="_navClass()">
@@ -368,6 +481,10 @@ export class HlmDatePicker implements BrnLabelable {
   /** Named separately so the grid's `aria-labelledby` has something stable. */
   readonly headerId = `hlm-date-picker-header-${HlmDatePicker._id}`;
 
+  /** Referenced by each caption trigger's `aria-controls` while its list is on the page. */
+  readonly monthListId = `hlm-date-picker-months-${HlmDatePicker._id}`;
+  readonly yearListId = `hlm-date-picker-years-${HlmDatePicker._id}`;
+
   /** `BrnLabelable`: what `<label hlmLabel>` points its `for` at. */
   readonly labelableId = computed(() => this.triggerId);
 
@@ -407,13 +524,56 @@ export class HlmDatePicker implements BrnLabelable {
    * a concrete class. The cast is the token's generic argument being `unknown`;
    * this component provides the adapter, so the `T` is a `Date` by construction.
    */
-  protected readonly _monthLabel = computed(() => {
+  private readonly _focused = computed(() => {
     const calendar = this._calendar() as BrnCalendarBase<Date> | undefined;
-    const focused = calendar?.focusedDate() ?? new Date();
+    return calendar?.focusedDate() ?? new Date();
+  });
+
+  protected readonly _monthLabel = computed(() => {
+    const focused = this._focused();
     return this._i18n
       .config()
       .formatHeader(this._adapter.getMonth(focused), this._adapter.getYear(focused));
   });
+
+  /** The month on show, as the month select names it. */
+  protected readonly _monthName = computed(
+    () => this._months()[this._adapter.getMonth(this._focused())],
+  );
+
+  protected readonly _focusedYear = computed(() => this._adapter.getYear(this._focused()));
+
+  protected readonly _months = computed(() => this._i18n.config().months());
+
+  /**
+   * Today's year ten either way, widened to reach the chosen day and the month
+   * on show (135 D3). Brain's default list stops at next year, which cannot
+   * reach a future expiry date.
+   */
+  protected readonly _years = computed(() => {
+    const thisYear = this._adapter.getYear(this._adapter.now());
+    const date = this._date();
+    const reached = [
+      this._focusedYear(),
+      ...(date === undefined ? [] : [this._adapter.getYear(date)]),
+    ];
+    return this._i18n
+      .config()
+      .years(
+        Math.min(thisYear - YEAR_REACH, ...reached),
+        Math.max(thisYear + YEAR_REACH, ...reached),
+      );
+  });
+
+  // The caret of each caption list, announced on its trigger (130 C2); see
+  // `activeDescendantId` for the route and its upgrade risk.
+  private readonly _monthSelect = viewChild('monthSelect', { read: BrnSelectBaseToken });
+  private readonly _yearSelect = viewChild('yearSelect', { read: BrnSelectBaseToken });
+  private readonly _renderedOptions = viewChildren(BrnSelectItemToken);
+  protected readonly _monthList = viewChild('monthList');
+  protected readonly _yearList = viewChild('yearList');
+  protected readonly _monthCaret = activeDescendantId(this._monthSelect, this._renderedOptions);
+  protected readonly _yearCaret = activeDescendantId(this._yearSelect, this._renderedOptions);
 
   /**
    * Brain's invalidity ∪ "a server refused this field", read from the one place
@@ -473,6 +633,32 @@ export class HlmDatePicker implements BrnLabelable {
       'data-[today]:bg-accent data-[today]:text-accent-foreground',
       'data-[outside]:text-muted-foreground data-[outside]:opacity-50',
       'data-disabled:pointer-events-none data-disabled:opacity-50',
+    ),
+  );
+
+  protected readonly _captionSelectClass = computed(() =>
+    hlm(
+      'lore-ctl h-8 gap-1 px-2 font-normal',
+      'border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground',
+    ),
+  );
+
+  protected readonly _listPanelClass = computed(() =>
+    hlm(
+      // The date panel's own surface, one layer up.
+      'ring-border bg-popover text-popover-foreground rounded-lg p-1 shadow-md ring-1 outline-none',
+      // brain publishes the trigger's width here, so the list is never narrower
+      // than the control it belongs to.
+      'min-w-(--brn-select-width) max-h-64 overflow-x-hidden overflow-y-auto',
+      'motion-safe:data-open:animate-in motion-safe:data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 duration-100',
+    ),
+  );
+
+  protected readonly _optionClass = computed(() =>
+    hlm(
+      'relative flex w-full cursor-default items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm outline-hidden select-none',
+      // `data-highlighted` is brain's caret, so keyboard and pointer land on one treatment.
+      'hover:bg-accent hover:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground',
     ),
   );
 

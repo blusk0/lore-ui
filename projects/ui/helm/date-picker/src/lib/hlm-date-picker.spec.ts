@@ -377,4 +377,175 @@ describe('HlmDatePicker', () => {
       ),
     ).toEqual([]);
   });
+
+  describe('the caption month and year selects (135 D3)', () => {
+    // Today is pinned so the year list is a fact rather than a reading of the
+    // clock. Only `Date` is faked; the timers brain and the CDK schedule still run.
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-10T12:00:00Z') });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const control = (name: 'Month' | 'Year') =>
+      overlayContainer().querySelector<HTMLButtonElement>(
+        `[role="combobox"][aria-label="${name}"]`,
+      )!;
+
+    const list = (name: 'Months' | 'Years') =>
+      overlayContainer().querySelector<HTMLElement>(`[role="listbox"][aria-label="${name}"]`);
+
+    const options = (name: 'Months' | 'Years') =>
+      Array.from(list(name)?.querySelectorAll<HTMLElement>('[role="option"]') ?? []);
+
+    const texts = (name: 'Months' | 'Years') => options(name).map((o) => o.textContent!.trim());
+
+    async function choose(
+      t: Awaited<ReturnType<typeof setup>>,
+      name: 'Month' | 'Year',
+      option: string,
+    ) {
+      control(name).focus();
+      await t.click(control(name));
+      const listName = name === 'Month' ? 'Months' : 'Years';
+      await t.click(options(listName).find((o) => o.textContent!.trim() === option)!);
+    }
+
+    // CDK's list key manager reads `keyCode`, which a browser sets and a bare
+    // jsdom `KeyboardEvent` does not.
+    const KEY_CODES: Record<string, number> = { ArrowDown: 40, Enter: 13 };
+    async function pressKey(t: Awaited<ReturnType<typeof setup>>, key: string, on: HTMLElement) {
+      on.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key,
+          keyCode: KEY_CODES[key],
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      await t.fixture.whenStable();
+    }
+
+    /** The day the grid's roving tabindex sits on. */
+    const focusedDay = (t: Awaited<ReturnType<typeof setup>>) =>
+      t
+        .days()
+        .find((cell) => cell.getAttribute('tabindex') === '0')
+        ?.textContent?.trim();
+
+    it('moves the month on show to a year three ahead, keeping the month', async () => {
+      const t = await setup('2026-08-15');
+      await t.open();
+      await choose(t, 'Year', '2029');
+
+      expect(t.header()!.textContent).toContain('August');
+      expect(t.header()!.textContent).toContain('2029');
+      expect(control('Year').textContent).toContain('2029');
+      expect(control('Month').textContent).toContain('Aug');
+      expect(t.days()).toHaveLength(31);
+      expect(focusedDay(t)).toBe('15');
+
+      // The list shut and handed focus back to the control that opened it.
+      expect(list('Years')).toBeNull();
+      expect(document.activeElement).toBe(control('Year'));
+    });
+
+    it('emits the day then picked, in the year it jumped to', async () => {
+      const t = await setup('2026-08-15');
+      await t.open();
+      await choose(t, 'Year', '2029');
+      await t.click(t.day(20));
+
+      expect(t.host.emitted()).toEqual(['2029-08-20']);
+      expect(t.trigger().textContent).toContain('Aug 20, 2029');
+    });
+
+    it('runs ten years either side of today', async () => {
+      const t = await setup();
+      await t.open();
+      await t.click(control('Year'));
+
+      expect(texts('Years')[0]).toBe('2016');
+      expect(texts('Years').at(-1)).toBe('2036');
+      expect(texts('Years')).toHaveLength(21);
+    });
+
+    it('offers a value fifteen years ahead, chosen, in the list', async () => {
+      const t = await setup('2041-03-10');
+      await t.open();
+      await t.click(control('Year'));
+
+      // Outside today plus ten, so only the widening puts it here.
+      expect(texts('Years')).toContain('2041');
+      expect(texts('Years')[0]).toBe('2016');
+      expect(texts('Years').at(-1)).toBe('2041');
+
+      const chosen = options('Years').filter((o) => o.getAttribute('aria-selected') === 'true');
+      expect(chosen.map((o) => o.textContent!.trim())).toEqual(['2041']);
+    });
+
+    it('changes no value until a day is picked', async () => {
+      const t = await setup('2026-08-15');
+      await t.open();
+      await choose(t, 'Year', '2029');
+      await choose(t, 'Month', 'Nov');
+
+      expect(t.header()!.textContent).toContain('November');
+      expect(t.header()!.textContent).toContain('2029');
+      expect(t.host.emitted()).toEqual([]);
+      expect(t.host.receivedOn()).toBe('2026-08-15');
+      expect(t.trigger().textContent).toContain('Aug 15, 2026');
+      expect(t.trigger().getAttribute('aria-expanded')).toBe('true');
+
+      await t.click(t.day(3));
+      expect(t.host.emitted()).toEqual(['2029-11-03']);
+    });
+
+    it('is named and worked from the keyboard, caret announced', async () => {
+      const t = await setup('2026-08-15');
+      await t.open();
+
+      const year = control('Year');
+      expect(year.tagName).toBe('BUTTON');
+      expect(year.getAttribute('aria-haspopup')).toBe('listbox');
+      expect(control('Month').tagName).toBe('BUTTON');
+
+      await pressKey(t, 'ArrowDown', year);
+      expect(year.getAttribute('aria-expanded')).toBe('true');
+      expect(year.getAttribute('aria-controls')).toBe(list('Years')!.id);
+      const caretText = () =>
+        overlayContainer()
+          .querySelector(`[id="${year.getAttribute('aria-activedescendant')}"]`)
+          ?.textContent?.trim();
+      expect(caretText()).toBe('2026');
+
+      await pressKey(t, 'ArrowDown', year);
+      await pressKey(t, 'ArrowDown', year);
+      await pressKey(t, 'ArrowDown', year);
+      expect(caretText()).toBe('2029');
+
+      await pressKey(t, 'Enter', year);
+      expect(year.getAttribute('aria-expanded')).toBe('false');
+      expect(year.hasAttribute('aria-activedescendant')).toBe(false);
+      expect(year.hasAttribute('aria-controls')).toBe(false);
+      expect(t.header()!.textContent).toContain('2029');
+      expect(t.host.emitted()).toEqual([]);
+    });
+
+    it('paints only from the token layer and reports no axe violations, list open', async () => {
+      const t = await setup('2026-08-03');
+      await t.open();
+      await t.click(control('Year'));
+      expect(list('Years')).not.toBeNull();
+
+      expectOnlyTokenColours(overlayContainer());
+      expect(
+        (await axe(overlayContainer())).violations.map(
+          (v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join('; ')}`,
+        ),
+      ).toEqual([]);
+    });
+  });
 });
