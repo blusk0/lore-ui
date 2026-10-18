@@ -55,7 +55,17 @@ import { LoreButton, type LoreColor, type LoreVariant } from '@lore/ui/button';
     HlmTooltipImports,
   ],
   template: `
-    <section class="rounded-xl border bg-card p-6 text-card-foreground">
+    <!-- Cards: .lore-card is the raised surface; data-color adds the top accent. -->
+    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      @for (stat of stats; track stat.label) {
+        <div class="lore-card" [attr.data-color]="stat.color">
+          <p class="lore-microlabel">{{ stat.label }}</p>
+          <p class="tabular mt-1 text-2xl font-semibold">{{ stat.value }}</p>
+        </div>
+      }
+    </div>
+
+    <section class="lore-card p-6">
       <h2 class="mb-4 text-sm font-medium text-muted-foreground">
         Buttons — the global variant matrix
       </h2>
@@ -303,6 +313,43 @@ import { LoreButton, type LoreColor, type LoreVariant } from '@lore/ui/button';
       </div>
 
       <h2 class="mt-8 mb-4 text-sm font-medium text-muted-foreground">
+        Dense table (.lore-table) — row actions, caret, selection, status chips
+      </h2>
+      <div class="lore-table-scroll">
+        <table class="lore-table">
+          <thead>
+            <tr>
+              <th data-sortable aria-sort="ascending">Code</th>
+              <th>Name</th>
+              <th>Status</th>
+              <th data-numeric>On hand</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of stock; track row.code; let index = $index) {
+              <tr
+                [attr.tabindex]="index === 0 ? 0 : -1"
+                [attr.data-active]="index === 0 ? 'true' : null"
+                [attr.data-selected]="index === 2 ? 'true' : null"
+              >
+                <td>{{ row.code }}</td>
+                <td>{{ row.name }}</td>
+                <td><span loreBadge variant="soft" [color]="row.color">{{ row.status }}</span></td>
+                <td data-numeric class="tabular">{{ row.onHand }}</td>
+                <td>
+                  <div class="flex flex-wrap gap-2">
+                    <button loreBtn variant="outlined" size="sm">View lots</button>
+                    <button loreBtn variant="outlined" color="danger" size="sm">Archive</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <h2 class="mt-8 mb-4 text-sm font-medium text-muted-foreground">
         Metadata type (tabular figures)
       </h2>
       <dl class="grid w-fit grid-cols-[auto_auto] gap-x-8 gap-y-1 text-sm">
@@ -321,6 +368,26 @@ export class UiProof {
   protected readonly colors: LoreColor[] = ['primary', 'neutral', 'danger', 'success', 'warning'];
 
   protected readonly progress = signal(62);
+
+  protected readonly stats: readonly { label: string; value: string; color: LoreColor }[] = [
+    { label: 'Assets', value: '1,284', color: 'primary' },
+    { label: 'Awaiting review', value: '17', color: 'warning' },
+    { label: 'Rights expiring', value: '4', color: 'danger' },
+    { label: 'Published', value: '962', color: 'success' },
+  ];
+
+  protected readonly stock: readonly {
+    code: string;
+    name: string;
+    status: string;
+    color: LoreColor;
+    onHand: string;
+  }[] = [
+    { code: 'MAT-0001', name: 'Shea butter', status: 'Active', color: 'success', onHand: '12.50 kg' },
+    { code: 'MAT-0002', name: 'Coconut oil 76°', status: 'Low stock', color: 'warning', onHand: '1.20 kg' },
+    { code: 'MAT-0003', name: 'Lavender 40/42', status: 'Active', color: 'success', onHand: '480 g' },
+    { code: 'MAT-0004', name: 'Sodium hydroxide', status: 'Expired lot', color: 'danger', onHand: '3.00 kg' },
+  ];
 
   protected readonly rows = [
     { name: 'coastline-01.arw', size: '24.6 MB', dimensions: '6048 × 4024' },

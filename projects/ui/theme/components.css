@@ -29,7 +29,15 @@
     transition:
       background-color var(--motion-fast) var(--ease),
       border-color var(--motion-fast) var(--ease),
-      color var(--motion-fast) var(--ease);
+      box-shadow var(--motion-fast) var(--ease),
+      color var(--motion-fast) var(--ease),
+      translate var(--motion-fast) var(--ease);
+  }
+
+  /* A press that moves: half a pixel down while the pointer is held. Small
+     enough never to shift a neighbour, large enough to feel like a key. */
+  .lore-ctl:active:not(:disabled, [data-disabled='true']) {
+    translate: 0 0.5px;
   }
 
   .lore-ctl:focus-visible {
@@ -90,29 +98,63 @@
     font-size: var(--text-ui-lg);
   }
 
-  /* ── variant axis (solid / soft / outlined / plain) ── */
+  /* ── variant axis (solid / soft / outlined / plain) ──
+
+     Solid is the one variant with depth: a colour-tinted drop shadow under it,
+     a 1px highlight along its top edge, and --ctl-shade darkening it toward the
+     bottom — so a filled button reads as a raised key rather than as a flat
+     rectangle. The image layers are the shade over --vc-gradient, which only
+     primary sets (tokens.css, tier 3); everywhere else it is `none` and the
+     flat --vc colour under it shows through. Ratios for every --vc-on are
+     measured at the shade's darkest pixel (tokens.css). */
   .lore-ctl[data-variant='solid'] {
     background-color: var(--vc);
+    background-image:
+      linear-gradient(to bottom, transparent, var(--ctl-shade)),
+      var(--vc-gradient, none);
     color: var(--vc-on);
+    box-shadow:
+      inset 0 1px 0 var(--ctl-highlight),
+      0 1px 2px color-mix(in oklab, var(--vc) 30%, transparent),
+      0 2px 6px color-mix(in oklab, var(--vc) 18%, transparent);
   }
   .lore-ctl[data-variant='solid']:hover:not(:disabled) {
     background-color: var(--vc-strong);
+    background-image:
+      linear-gradient(to bottom, transparent, var(--ctl-shade)),
+      var(--vc-gradient-strong, none);
+    box-shadow:
+      inset 0 1px 0 var(--ctl-highlight),
+      0 2px 4px color-mix(in oklab, var(--vc) 30%, transparent),
+      0 4px 12px color-mix(in oklab, var(--vc) 22%, transparent);
   }
 
+  /* Soft takes a hairline ring of its own colour, inset so it costs no layout.
+     Without it a soft chip on a tinted row, or on the header band, had no edge
+     at all — 14% of a colour over a surface that is already faintly coloured. */
   .lore-ctl[data-variant='soft'] {
     background-color: color-mix(in oklab, var(--vc) 14%, transparent);
     color: var(--vc-soft-fg);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--vc) 20%, transparent);
   }
   .lore-ctl[data-variant='soft']:hover:not(:disabled) {
     background-color: color-mix(in oklab, var(--vc) 22%, transparent);
   }
 
+  /* Outlined is filled with the card, not transparent: it is a button, and on
+     a hovered or selected table row a transparent one took the row's tint and
+     stopped looking pressable. The soft-fg inks are measured on white and on
+     the card already, and on its 10% hover tint over the card (6.74:1 for
+     primary, the lowest). */
   .lore-ctl[data-variant='outlined'] {
+    background-color: var(--card);
     border-color: color-mix(in oklab, var(--vc) 45%, transparent);
     color: var(--vc-soft-fg);
+    box-shadow: 0 1px 2px color-mix(in oklab, var(--gray-950) 6%, transparent);
   }
   .lore-ctl[data-variant='outlined']:hover:not(:disabled) {
-    background-color: color-mix(in oklab, var(--vc) 10%, transparent);
+    background-color: color-mix(in oklab, var(--vc) 10%, var(--card));
+    border-color: color-mix(in oklab, var(--vc) 65%, transparent);
   }
 
   .lore-ctl[data-variant='plain'] {
@@ -135,6 +177,44 @@
   .lore-chip[data-suggested='true'] {
     border-style: dashed;
     border-color: color-mix(in oklab, var(--vc) 55%, transparent);
+  }
+
+  /* ── card: the raised surface panels, stat tiles and forms sit on ──
+     The `bg-card border rounded-lg` idiom the apps already hand-roll, plus the
+     resting elevation it never had, so a page reads as surfaces on a ground
+     rather than as outlines on a page of the same white.
+
+       <section class="lore-card">…</section>
+       <div class="lore-card" data-color="success">…</div>   ← accent stripe
+
+     data-color is optional and adds a 3px accent along the top edge in that
+     colour — primary takes its gradient. It is decoration, never the only
+     carrier of a meaning: a stat tile that is "bad" still says so in words.
+     Padding is the card's own; a consumer that needs a flush body (a table, a
+     list) overrides it with a utility (`lore-card p-0`). */
+  .lore-card {
+    position: relative;
+    padding: calc(var(--space) * 5);
+    background-color: var(--card);
+    color: var(--card-foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-1, none);
+  }
+
+  /* A pseudo, not a border-top: a coloured top border meets the grey side
+     borders at a mitred corner, and the pseudo can take a gradient. Its top
+     corners follow the card's own radius by inheriting the two longhands. */
+  .lore-card[data-color]::before {
+    content: '';
+    position: absolute;
+    inset-inline: -1px;
+    top: -1px;
+    height: 3px;
+    border-start-start-radius: inherit;
+    border-start-end-radius: inherit;
+    background: var(--vc-gradient, var(--vc));
+    pointer-events: none;
   }
 
   /* ── dense table ──────────────────────────────────────────────────
@@ -189,7 +269,11 @@
     overscroll-behavior: contain;
     background-color: var(--card);
     border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
+    /* Resting elevation from the decor layer, so the table sits on the page the
+       way a card does. The fallback keeps the contract for a consumer that
+       imports components.css without decor.css: no shadow, nothing broken. */
+    box-shadow: var(--shadow-1, none);
 
     /* Let a SHORT table size to its content while a long one still scrolls.
        The scrollport is a stretched flex item (`flex-1` in the component), which
@@ -243,12 +327,14 @@
        by weight and a hairline; at a glance the table began with an odd first
        record rather than with a header. */
     height: var(--table-head-h);
-    padding-inline: calc(var(--space) * 3);
+    padding-inline: var(--table-cell-px);
     /* An opaque fill, not `inherit`. Opacity is what keeps rows scrolling UNDER
-       the sticky header rather than through it, and --muted is opaque in both
-       themes — so the guarantee the inherit chain used to provide is preserved
-       by a stronger means, while the band gets a fill of its own. */
-    background-color: var(--muted);
+       the sticky header rather than through it, and --table-head-bg is opaque in
+       both themes — so the guarantee the inherit chain used to provide is
+       preserved by a stronger means, while the band gets a fill of its own. It
+       was --muted, a grey; it is now its own token, a faint primary tint, and
+       --muted-foreground is measured on it (tokens.css). */
+    background-color: var(--table-head-bg);
     border-bottom: 1px solid var(--border);
     text-align: start;
     font-size: var(--table-head-text);
@@ -278,7 +364,8 @@
   .lore-table tbody th,
   .lore-table tbody td {
     height: var(--table-row-h);
-    padding-inline: calc(var(--space) * 3);
+    padding-block: var(--table-cell-py);
+    padding-inline: var(--table-cell-px);
     /* --border at full strength. It used to be thinned to 70%, which put the
        row rules at 1.13:1 in light — the table's only structure, and all but
        invisible. The thinning was compensating for a hairline drawn against a
@@ -288,6 +375,18 @@
     text-align: start;
     font-weight: 400;
     vertical-align: middle;
+  }
+
+  /* The first and last columns take the wider edge gutter, so a code in the
+     first column and a row-action button in the last sit clear of the card's
+     own border instead of against it. Header cells included, so the labels stay
+     aligned over their columns. */
+  .lore-table tr > :first-child {
+    padding-inline-start: var(--table-edge-px);
+  }
+
+  .lore-table tr > :last-child {
+    padding-inline-end: var(--table-edge-px);
   }
 
   /* The surface's own border closes the list, so the last row does not draw a
@@ -327,11 +426,15 @@
      against the page in light) — two states that were each invisible and, where
      visible, indistinguishable from one another. */
 
-  /* A state layer off --foreground rather than --accent: --accent is only
-     gray-100 in light, which caps a fill on a white card at 1.11:1 no matter how
-     it is mixed. The foreground token inverts with the theme by itself, so one
-     percentage darkens in light and lightens in dark. 1.24:1 light, 1.27:1 dark,
-     from 1.04:1 and 1.16:1. */
+  .lore-table tbody tr {
+    transition: background-color var(--motion-fast) var(--ease);
+  }
+
+  /* A state layer off --foreground rather than --accent. --accent is a primary
+     tint since 0.3.0, and hover must stay the NEUTRAL channel — colour belongs
+     to the caret and the selection. The foreground token inverts with the theme
+     by itself, so one percentage darkens in light and lightens in dark.
+     1.23:1 light, 1.28:1 dark on the 0.3.0 ramp (1.24 / 1.27 on the old one). */
   .lore-table tbody tr:hover {
     background-color: color-mix(in oklab, var(--foreground) 10%, transparent);
   }
@@ -343,7 +446,7 @@
 
      A caret is a POSITION, so it is drawn as a rule at the row's leading edge
      rather than as a wash over it — the one treatment a fill can never be
-     mistaken for, and legible on its own terms (5.62:1 light, 4.38:1 dark
+     mistaken for, and legible on its own terms (6.05:1 light, 6.60:1 dark
      against the card, where the fill it replaced managed 1.06:1). The faint
      wash behind it only carries the mark across the row's full width; the rule
      is what the eye returns to. Distinct from :focus-visible below by design:
@@ -361,8 +464,11 @@
     box-shadow: inset 3px 0 0 0 var(--primary);
   }
 
+  /* 12%, from 14%: --muted-foreground on the 14% wash measured 4.20:1 in light
+     and failed AA (4.12 on the old ramp). At 12% it is 4.61:1, a primary link
+     5.07:1; dark 5.81 / 5.51. */
   .lore-table tbody tr[data-selected='true'] {
-    background-color: color-mix(in oklab, var(--primary) 14%, transparent);
+    background-color: color-mix(in oklab, var(--primary) 12%, transparent);
   }
 
   /* One focus ring for the whole surface, from the same --ring semantic the

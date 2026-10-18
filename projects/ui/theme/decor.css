@@ -325,8 +325,8 @@
   /* ── micro-label ──
      The table head's recipe, one token per axis, extracted rather than
      moved — .lore-table thead th keeps its own rules. The ink is
-     --muted-foreground, whose AA clearance is measured against all
-     three surfaces it lands on (tokens.css); this class adds no new
+     --muted-foreground, whose AA clearance is measured against every
+     surface it lands on (tokens.css); this class adds no new
      pairing. */
   .lore-microlabel {
     font-size: var(--table-head-text);

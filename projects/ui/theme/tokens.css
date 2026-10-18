@@ -17,31 +17,55 @@
 
 /* ── Tier 1: primitives ─────────────────────────────────────────── */
 :root {
-  /* warm-gray neutral ramp.
+  /* cool slate neutral ramp (0.3.0; was a near-achromatic warm grey, hue 75).
+     The faint blue lean — chroma peaks at 0.024 mid-ramp and falls to almost
+     nothing at both ends — is what stops every surface reading as unpainted
+     grey, and it sits two degrees off the primary hue so the neutrals and the
+     accent read as one family rather than as grey plus a colour.
      gray-500 is the one step pinned by a contrast obligation rather than by the
      ramp's own even spacing: it is light --muted-foreground, and it has to clear
-     4.5:1 on *every* surface that carries secondary text — the page, a card, and
-     the table header's --muted band. The band is the binding one; see
-     --muted-foreground below for the measurements. */
-  --gray-50: oklch(0.985 0.002 75);
-  --gray-100: oklch(0.965 0.003 75);
-  --gray-200: oklch(0.925 0.004 75);
-  --gray-300: oklch(0.87 0.005 75);
-  --gray-400: oklch(0.71 0.006 75);
-  --gray-500: oklch(0.54 0.007 75);
-  --gray-600: oklch(0.46 0.007 75);
-  --gray-700: oklch(0.375 0.006 75);
-  --gray-800: oklch(0.28 0.005 75);
-  --gray-850: oklch(0.24 0.005 75);
-  --gray-900: oklch(0.205 0.005 75);
-  --gray-950: oklch(0.155 0.004 75);
+     4.5:1 on *every* surface that carries secondary text — the page, a card, the
+     table header's band, the accent hover and a selected row. The selected row is
+     the binding one; see --muted-foreground below for the measurements. */
+  --gray-50: oklch(0.978 0.004 262);
+  --gray-100: oklch(0.967 0.006 262);
+  --gray-200: oklch(0.925 0.01 262);
+  --gray-300: oklch(0.87 0.014 262);
+  --gray-400: oklch(0.71 0.02 262);
+  --gray-500: oklch(0.52 0.024 262);
+  --gray-600: oklch(0.46 0.024 262);
+  --gray-700: oklch(0.375 0.022 262);
+  --gray-800: oklch(0.28 0.018 262);
+  --gray-850: oklch(0.235 0.016 262);
+  --gray-900: oklch(0.205 0.014 262);
+  --gray-950: oklch(0.155 0.012 262);
 
-  /* accent — Joy-flavored blue */
-  --primary-300: oklch(0.78 0.11 250);
-  --primary-400: oklch(0.68 0.15 250);
-  --primary-500: oklch(0.59 0.18 250);
-  --primary-600: oklch(0.51 0.19 250);
-  --primary-700: oklch(0.45 0.17 250);
+  /* accent — indigo-leaning blue, more saturated than the 0.2 ramp (hue 250,
+     chroma 0.19 at 600). The two tint steps (50, 100) are new: they are the
+     coloured surfaces — the table header band, the accent hover, the active rail
+     item — that replace grey-on-grey. */
+  --primary-50: oklch(0.975 0.014 264);
+  --primary-100: oklch(0.945 0.032 264);
+  --primary-300: oklch(0.8 0.095 264);
+  --primary-400: oklch(0.7 0.15 264);
+  --primary-500: oklch(0.58 0.2 264);
+  --primary-600: oklch(0.51 0.21 264);
+  --primary-700: oklch(0.45 0.19 264);
+
+  /* violet — the primary's companion hue, consumed only as the far stop of the
+     primary gradient (--vc-gradient below). Never a semantic of its own: there
+     is no `bg-violet`, and nothing reads it as a state. Its steps mirror the
+     primary steps they pair with, so the gradient's two ends carry the same ink:
+         white on violet-600 6.35:1, on violet-700 8.15:1 (light)
+         deep ink on violet-400 6.48:1, on violet-300 9.48:1 (dark) */
+  --violet-300: oklch(0.8 0.095 292);
+  --violet-400: oklch(0.7 0.15 292);
+  --violet-600: oklch(0.51 0.21 292);
+  --violet-700: oklch(0.45 0.19 292);
+
+  /* deep primary ink — what sits on a LIGHT primary fill. Dark --primary is
+     such a fill (see the dark block), so this is its foreground. */
+  --primary-ink: oklch(0.2 0.04 264);
 
   /* status hues */
   --danger-300: oklch(0.78 0.11 25);
@@ -55,6 +79,9 @@
   --success-500: oklch(0.6 0.14 150);
   --success-600: oklch(0.52 0.13 150);
   --success-700: oklch(0.45 0.11 150);
+  /* deep ink for a light success fill — dark solid success (see the variant
+     matrix). White on success-500 measured 3.71:1; this on success-400 is 7.08. */
+  --success-ink: oklch(0.2 0.04 150);
 
   --warning-300: oklch(0.85 0.11 80);
   --warning-400: oklch(0.79 0.14 75);
@@ -111,6 +138,9 @@
 :root {
   --background: var(--gray-50);
   --foreground: var(--gray-900);
+  /* white cards on a slate page, a step further apart than before (the page
+     was 0.985): with --shadow-1 under a card the surfaces separate by depth as
+     well as by fill. */
   --card: white;
   --card-foreground: var(--gray-900);
   --popover: white;
@@ -122,16 +152,22 @@
   --muted: var(--gray-100);
   /* Carries almost every piece of secondary text on screen — page subtitles,
      unsorted column headers, the pager caption, the table's own empty/loading
-     bodies — so it is measured against all three surfaces it can land on, not
-     just the page:
-         page (gray-50)          4.86:1
-         card (white)            5.07:1
-         --muted band (gray-100) 4.58:1   ← the binding constraint
-     gray-500 at L 0.56 measured 4.46 on the page and 4.21 on the band, failing
-     AA on both. L 0.55 clears the page (4.65) and still fails the band (4.39),
-     which is why the ramp step is 0.54 and not the nearer-looking 0.55. */
+     bodies — so it is measured against every surface it can land on, not just
+     the page (0.3.0 slate ramp):
+         page (gray-50)                       5.17:1
+         card (white)                         5.51:1
+         --muted (gray-100)                   5.01:1
+         table header band (primary-50)       5.12:1
+         --accent hover (primary-100)         4.67:1
+         selected row (12% primary over card) 4.61:1   ← the binding constraint
+     The selected row is why the step is L 0.52 and not the old 0.54: at 0.535
+     it measured 4.20 under the (then 14%) selection wash and failed AA — which
+     the old ramp also did, at 4.12, unrecorded. */
   --muted-foreground: var(--gray-500);
-  --accent: var(--gray-100);
+  /* Hover/focus fill for menu items, ghost controls and command rows: a primary
+     tint rather than gray-100, which sat at 1.01:1 on the page and could not be
+     seen. gray-800 on it 12.38:1, --foreground 15.20:1. */
+  --accent: var(--primary-100);
   --accent-foreground: var(--gray-800);
   --destructive: var(--danger-500);
   /* light --destructive is a mid-dark red → white ink (4.57:1, AA) */
@@ -153,31 +189,49 @@
   --border: var(--gray-200);
   --input: var(--gray-200);
   --ring: var(--primary-500);
-  --sidebar: var(--gray-100);
+  /* The rail is a white panel against the slate page, and its active item is a
+     primary tint with primary ink rather than one grey on another:
+         sidebar-foreground (gray-700) on white    10.22:1
+         accent ink (primary-700) on primary-100    6.63:1 */
+  --sidebar: white;
   --sidebar-foreground: var(--gray-700);
   --sidebar-primary: var(--primary-600);
   --sidebar-primary-foreground: white;
-  --sidebar-accent: var(--gray-200);
-  --sidebar-accent-foreground: var(--gray-800);
+  --sidebar-accent: var(--primary-100);
+  --sidebar-accent-foreground: var(--primary-700);
   --sidebar-border: var(--gray-200);
   --sidebar-ring: var(--primary-500);
+  /* The table header band. Light: the faintest primary tint, so the header is
+     the one coloured stripe on an otherwise white card. --muted-foreground on
+     it 5.12:1, the sorted column's --foreground 16.65:1. */
+  --table-head-bg: var(--primary-50);
 }
 
 /* ── Tier 2: semantics — DARK is the designed theme ─────────────── */
 .dark {
   --background: var(--gray-950);
-  --foreground: oklch(0.92 0.003 75);
+  --foreground: oklch(0.93 0.006 262);
   --card: var(--gray-900);
-  --card-foreground: oklch(0.92 0.003 75);
+  --card-foreground: oklch(0.93 0.006 262);
   --popover: var(--gray-850);
-  --popover-foreground: oklch(0.92 0.003 75);
-  --primary: var(--primary-500);
-  --primary-foreground: white;
+  --popover-foreground: oklch(0.93 0.006 262);
+  /* Dark --primary is a LIGHT fill with deep ink — the --destructive idiom
+     below, for the same reason. One token is both a fill (`bg-primary`) and an
+     ink (`text-primary`, 35 uses across the family), and on a dark card those
+     pull in opposite directions: no blue clears 4.5:1 under white text and 4.5:1
+     as text on gray-900 at once. The old mid-blue failed both, unrecorded (white
+     on it 4.08:1, it on the card 4.39:1). Now:
+         --primary-foreground on --primary   6.69:1
+         text-primary on card / popover      6.60 / 6.15:1 */
+  --primary: var(--primary-400);
+  --primary-foreground: var(--primary-ink);
   --secondary: var(--gray-800);
   --secondary-foreground: var(--gray-100);
   --muted: var(--gray-800);
   --muted-foreground: var(--gray-400);
-  --accent: var(--gray-800);
+  /* primary-tinted hover, mirroring light. gray-100 on it 12.43:1, and
+     --muted-foreground (a command shortcut on a hovered row) 5.31:1. */
+  --accent: oklch(0.3 0.045 264);
   --accent-foreground: var(--gray-100);
   --destructive: var(--danger-400);
   /* dark --destructive is a LIGHT red — white ink fails AA here (3.11:1).
@@ -191,17 +245,22 @@
      dark surface; ink stays deep (same --vc-on as light, mirroring data-color). */
   --warning: var(--warning-400);
   --warning-foreground: oklch(0.22 0.03 75);
-  --border: oklch(0.32 0.005 75);
-  --input: oklch(0.32 0.005 75);
+  /* hairlines: 1.41:1 on the card, 1.54:1 on the page */
+  --border: oklch(0.32 0.012 262);
+  --input: oklch(0.32 0.012 262);
   --ring: var(--primary-400);
+  /* gray-300 on the rail 12.09:1; the active item's primary-300 ink on its
+     tint 7.30:1. */
   --sidebar: var(--gray-900);
   --sidebar-foreground: var(--gray-300);
-  --sidebar-primary: var(--primary-500);
-  --sidebar-primary-foreground: white;
-  --sidebar-accent: var(--gray-800);
-  --sidebar-accent-foreground: var(--gray-100);
-  --sidebar-border: oklch(0.32 0.005 75);
+  --sidebar-primary: var(--primary-400);
+  --sidebar-primary-foreground: var(--primary-ink);
+  --sidebar-accent: oklch(0.3 0.06 264);
+  --sidebar-accent-foreground: var(--primary-300);
+  --sidebar-border: oklch(0.32 0.012 262);
   --sidebar-ring: var(--primary-400);
+  /* gray-400 header ink on it 6.22:1, the sorted column's foreground 13.03:1 */
+  --table-head-bg: oklch(0.25 0.025 264);
 }
 
 /* ── Tier 2b: token→utility registration for what the preset omits ──
@@ -256,20 +315,31 @@
   --content-max-w: 90rem;
 
   /* The table's row height names a DENSITY TIER, not a measurement. Tables
-     pin the compact tier while forms keep the page's comfortable one
-     (plan 030, open question 1): a maker scanning 200 lots wants rows, not
-     padding. That taste call is the one line below — point it at
-     var(--row-h-comfortable) to loosen every table at once, or at
-     var(--row-h) to make tables follow the page's density instead. */
-  --table-row-h: var(--row-h-compact);
+     used to pin the compact tier (plan 030, open question 1); 0.3.0 loosens
+     them to comfortable. At 1.75rem a row was exactly one --control-h-sm, so
+     every row-action button filled its row edge to edge and sat on both rules.
+     That taste call is still the one line below — point it back at
+     var(--row-h-compact) to tighten every table at once, or at var(--row-h) to
+     make tables follow the page's density instead. */
+  --table-row-h: var(--row-h-comfortable);
 
-  /* The header row is the one row that does NOT take the compact tier. A header
-     that measures the same as the rows it labels stops reading as a header — it
-     becomes row zero — so it takes the comfortable tier while the body keeps the
-     compact one. Naming the sibling token rather than restating 2.25rem is the
-     point: the two tiers stay a pair, and re-pointing --table-row-h at
-     comfortable collapses the distinction on purpose rather than by accident. */
-  --table-head-h: var(--row-h-comfortable);
+  /* Cell padding. The block padding is what keeps a control in a cell off the
+     row rules: a cell's `height` is a floor, so a row holding an sm button grows
+     to the button plus this, top and bottom, while a text-only row stays at
+     --table-row-h. The inline padding is the gutter between columns; the edge
+     padding is wider again, so the first and last columns do not hug the card's
+     own border. */
+  --table-cell-py: calc(var(--space) * 1.5);
+  --table-cell-px: calc(var(--space) * 4);
+  --table-edge-px: calc(var(--space) * 5);
+
+  /* The header row is taller than the rows it labels. A header that measures the
+     same as its rows stops reading as a header — it becomes row zero. It used to
+     buy that by taking the comfortable tier while the body took compact; now
+     that the body is comfortable, the header is a fixed 2.5rem: a quarter-rem
+     clear of the comfortable row, which is the same lead it had before. Point
+     --table-row-h back at compact and that lead grows to 0.75rem, on purpose. */
+  --table-head-h: 2.5rem;
 
   /* Header type: smaller than the body it labels, and uppercase to buy the
      distinction back. A column label is scanned once to locate a column and then
@@ -285,13 +355,33 @@
    Each data-color sets four channel vars; variant rules in
    components.css consume them. --vc = the color, --vc-strong = its
    hover/emphasis step, --vc-soft-fg = readable fg for tinted
-   surfaces, --vc-on = fg on solid fills.                            */
+   surfaces, --vc-on = fg on solid fills.
+
+   Two optional channels ride on top (0.3.0): --vc-gradient and
+   --vc-gradient-strong, a solid fill's image at rest and on hover. Only
+   primary sets them — a primary→violet sweep that makes the one call to
+   action on a screen read as the brand rather than as a blue rectangle.
+   Every other colour leaves them unset and paints flat --vc. Both stops of
+   each gradient are measured under --vc-on (the violet primitives above).
+
+   --ctl-shade is the bottom-edge darkening every solid fill takes, and
+   --ctl-highlight the 1px top bevel. Both are measured where they bind: the
+   shade at full strength, the gradient's last pixel, under each --vc-on —
+   the lowest is warning's deep ink on shaded warning-500, 5.64:1. */
+
+:root {
+  --ctl-shade: color-mix(in oklab, var(--gray-950) 10%, transparent);
+  --ctl-highlight: color-mix(in oklab, white 18%, transparent);
+}
 
 [data-color='primary'] {
   --vc: var(--primary-600);
   --vc-strong: var(--primary-700);
   --vc-soft-fg: var(--primary-700);
   --vc-on: white;
+  /* white on 600 / violet-600: 6.05 / 6.35:1; on 700 / violet-700: 7.81 / 8.15 */
+  --vc-gradient: linear-gradient(120deg, var(--primary-600), var(--violet-600));
+  --vc-gradient-strong: linear-gradient(120deg, var(--primary-700), var(--violet-700));
 }
 [data-color='neutral'] {
   --vc: var(--gray-600);
@@ -318,10 +408,19 @@
   --vc-on: oklch(0.22 0.03 75);
 }
 
+/* Dark primary is a light fill with deep ink, matching dark --primary (tier
+   2): white on the old primary-500 fill measured 4.08:1 and failed AA, and its
+   hover step — primary-400, LIGHTER in dark — was worse.
+       ink on primary-400 / violet-400            6.69 / 6.48:1
+       ink on primary-300 / violet-300 (hover)    9.67 / 9.48:1
+       primary-300 on its 14% / 22% soft wash     7.68 / 6.60:1 */
 .dark [data-color='primary'] {
-  --vc: var(--primary-500);
-  --vc-strong: var(--primary-400);
+  --vc: var(--primary-400);
+  --vc-strong: var(--primary-300);
   --vc-soft-fg: var(--primary-300);
+  --vc-on: var(--primary-ink);
+  --vc-gradient: linear-gradient(120deg, var(--primary-400), var(--violet-400));
+  --vc-gradient-strong: linear-gradient(120deg, var(--primary-300), var(--violet-300));
 }
 .dark [data-color='neutral'] {
   --vc: var(--gray-200);
@@ -329,15 +428,21 @@
   --vc-soft-fg: var(--gray-200);
   --vc-on: var(--gray-900);
 }
+/* The hover step goes DARKER here, not lighter: white on danger-400 is 3.11:1
+   (the same failure --destructive-foreground records), on danger-600 6.15:1. */
 .dark [data-color='danger'] {
   --vc: var(--danger-500);
-  --vc-strong: var(--danger-400);
+  --vc-strong: var(--danger-600);
   --vc-soft-fg: var(--danger-300);
 }
+/* Same flip as primary: white on success-500 measured 3.71:1. Deep ink on
+   success-400 7.08:1, on its hover step success-300 9.97:1; success-300 on the
+   22% soft wash 6.79:1. */
 .dark [data-color='success'] {
-  --vc: var(--success-500);
-  --vc-strong: var(--success-400);
+  --vc: var(--success-400);
+  --vc-strong: var(--success-300);
   --vc-soft-fg: var(--success-300);
+  --vc-on: var(--success-ink);
 }
 .dark [data-color='warning'] {
   --vc: var(--warning-500);

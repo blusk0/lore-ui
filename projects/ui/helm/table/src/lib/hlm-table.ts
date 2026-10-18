@@ -94,10 +94,13 @@ export class HlmTr {
 })
 export class HlmTh {
   constructor() {
-    // lore restyle: header row height rides the density scale (lg step).
+    // lore restyle: header row height rides the density scale (lg step). The
+    // band, the padding and the micro-label type are the `.lore-table` header's
+    // tokens (theme/tokens.css, tier 3), so the two tables read as one family:
+    // --muted-foreground on --table-head-bg is measured there (5.12:1 / 6.22:1).
     classes(
       () =>
-        'text-foreground h-(--control-h-lg) px-[calc(var(--space)*2)] text-start align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pe-0',
+        'bg-(--table-head-bg) text-muted-foreground h-(--control-h-lg) px-(--table-cell-px) first:ps-(--table-edge-px) last:pe-(--table-edge-px) text-start align-middle text-(length:--table-head-text) font-semibold tracking-(--table-head-tracking) uppercase whitespace-nowrap [&:has([role=checkbox])]:pe-0',
     );
   }
 }
@@ -112,13 +115,15 @@ export class HlmTh {
 })
 export class HlmTd {
   constructor() {
-    // lore restyle: cell padding + row height ride the density scale.
+    // lore restyle: cell padding + row height ride the density scale; the
+    // padding is the `.lore-table` cell's (--table-cell-*), wider at the edges so
+    // a row action in the last column clears the container's border.
     // Numeric cells opt into aligned figures with the global `.tabular` class
     // (mono + tabular-nums, defined in theme/index.css) — DAM tables live on
     // aligned figures: <td hlmTd class="tabular text-right">24.6 MB</td>
     classes(
       () =>
-        'p-[calc(var(--space)*2)] h-(--control-h-md) align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0',
+        'px-(--table-cell-px) py-(--table-cell-py) first:ps-(--table-edge-px) last:pe-(--table-edge-px) h-(--control-h-md) align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0',
     );
   }
 }
