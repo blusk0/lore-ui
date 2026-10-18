@@ -221,8 +221,9 @@
      A plain semantic <table>, deliberately not a grid widget: a card surface,
      a banded sticky header, tight zebra-free rows, right-aligned tabular
      numerics, and row-level keyboard navigation. Body metrics come from
-     --table-row-h, which pins the compact density tier, and the header from
-     --table-head-h, which does not (tokens.css, tier 3).
+     --table-row-h and --table-cell-*, which pin the comfortable density tier,
+     and the header from --table-head-h, a fixed step taller (tokens.css,
+     tier 3).
 
      Markup contract — the component binds to exactly these names:
 
@@ -307,7 +308,7 @@
      table — `<table class="lore-table bg-card">` — carries the header with
      it, no second knob to keep in sync.
 
-     The th itself now paints a --muted band instead of inheriting (see below),
+     The th itself now paints a --table-head-bg band instead of inheriting (see below),
      so this pair is the backstop rather than the whole story: it keeps thead and
      its row opaque behind the cells, which is what covers a re-surfaced table
      and any gap a future border-spacing would open. Both links must stay —
