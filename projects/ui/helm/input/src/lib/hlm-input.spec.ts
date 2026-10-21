@@ -11,6 +11,7 @@ import { HlmInput } from './hlm-input';
       <label hlmLabel>Notes</label>
       <input hlmInput data-testid="text" placeholder="SKU" />
       <textarea hlmInput data-testid="multiline"></textarea>
+      <select hlmInput data-testid="picker"><option>Each</option></select>
     </hlm-field>
 
     <input hlmInput data-testid="bare" aria-label="Loose" [aria-describedby]="'external-hint'" />
@@ -51,6 +52,31 @@ describe('HlmInput', () => {
     expect(classes).toEqual(
       expect.arrayContaining(['block', 'w-full', 'text-start', 'cursor-text', 'select-text']),
     );
+  });
+
+  it('gives a select the pointer of a picker, not the caret of a text field', async () => {
+    const { at } = await setup();
+    const classes = [...at('picker').classList];
+
+    expect(at('picker').tagName).toBe('SELECT');
+    expect(classes).toEqual(
+      expect.arrayContaining(['lore-ctl', 'cursor-pointer', 'select-none']),
+    );
+    expect(classes).not.toContain('cursor-text');
+    expect(classes).not.toContain('select-text');
+    // Utilities outrank `.lore-ctl:disabled`, so the disabled pointer is restated.
+    expect(classes).toContain('disabled:cursor-not-allowed');
+    // The text controls keep their caret.
+    expect([...at('text').classList]).not.toContain('cursor-pointer');
+    expect([...at('multiline').classList]).toContain('cursor-text');
+  });
+
+  it('restates the disabled pointer on every control, since utilities outrank .lore-ctl', async () => {
+    const { at } = await setup();
+
+    for (const id of ['text', 'multiline', 'picker']) {
+      expect([...at(id).classList]).toContain('disabled:cursor-not-allowed');
+    }
   });
 
   it('paints from the semantic surface tokens, not the variant matrix', async () => {

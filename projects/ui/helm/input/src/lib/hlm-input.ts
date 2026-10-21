@@ -48,6 +48,8 @@ export class HlmInput {
   private readonly _field = inject(HlmField, { optional: true });
   private readonly _isTextarea =
     inject(ElementRef<HTMLElement>).nativeElement.tagName === 'TEXTAREA';
+  private readonly _isSelect =
+    inject(ElementRef<HTMLElement>).nativeElement.tagName === 'SELECT';
 
   protected readonly _invalid = computed(() => this._field?.invalid() ?? false);
 
@@ -58,8 +60,11 @@ export class HlmInput {
       // disabled story — one place to retune every control in the lore family.
       // The utilities below are the corrections a *text* control needs against a
       // base written for buttons: a button centres one word and refuses a text
-      // caret, a field is a full-width writing surface.
-      'block w-full cursor-text text-start font-normal select-text',
+      // caret, a field is a full-width writing surface. A select is a picker,
+      // not a writing surface, so it keeps the pointer. Both branches restate the
+      // disabled pointer because the utilities layer outranks `.lore-ctl:disabled`.
+      'block w-full text-start font-normal disabled:cursor-not-allowed',
+      this._isSelect ? 'cursor-pointer select-none' : 'cursor-text select-text',
       // Painted from the semantic surface tokens rather than from the
       // variant matrix's --vc channels: solid/soft/outlined/plain is an
       // *emphasis* axis for an actionable control, and a text field has no
