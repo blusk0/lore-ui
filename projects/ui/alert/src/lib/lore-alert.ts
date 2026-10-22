@@ -5,7 +5,26 @@ import { classes } from '@lore/ui/helm/utils';
  * How loud the alert is, and — because the two are the same decision — what it
  * is about. `danger` is the only tone that interrupts.
  */
-export type LoreAlertTone = 'danger' | 'info';
+export type LoreAlertTone = 'danger' | 'warning' | 'success' | 'info';
+
+/** Complete literals, one per tone: Tailwind finds them by scanning this source. */
+const TONE_CLASSES: Record<LoreAlertTone, string> = {
+  // The wash and the ink are the pairing the token layer already measured for
+  // the table's failure body: 8% of --destructive under --destructive-soft-fg is
+  // 7.28:1 in light and 7.80:1 in dark. Plain `text-destructive` on the same
+  // wash is 4.06:1 and fails AA, which is the trap --destructive-soft-fg was
+  // created for (tokens.css).
+  danger: 'border-destructive/30 bg-destructive/8 text-(--destructive-soft-fg)',
+  // The same idiom on the amber hue: --warning-soft-fg on an 8% --warning wash
+  // is 4.91:1 in light and 10.98:1 in dark; --warning itself there is 3.24:1.
+  warning: 'border-warning/30 bg-warning/8 text-(--warning-soft-fg)',
+  // --success-soft-fg on an 8% --success wash: 5.97:1 in light, 9.88:1 in dark.
+  success: 'border-success/30 bg-success/8 text-(--success-soft-fg)',
+  // Neutral, and deliberately not a second colour: an informational condition
+  // on --muted reads as part of the page rather than as a weaker failure.
+  // --foreground on --muted is the highest-contrast pair in the token set.
+  info: 'border-border bg-muted text-foreground',
+};
 
 /**
  * A condition that belongs to a **page or a section**, stated in place and
@@ -27,14 +46,17 @@ export type LoreAlertTone = 'danger' | 'info';
  *
  * ## The tone is an ARIA decision before it is a colour one
  *
- * `danger` renders `role="alert"` (implicitly assertive, implicitly atomic) and
- * `info` renders `role="status"` (implicitly polite). That is the whole reason
- * this component does not simply take the lore variant matrix's `color` axis
- * like `LoreButton` and `LoreBadge` do: `data-color="warning"` is a hue, and
- * this input decides whether a screen-reader user's current sentence is cut off.
- * A component with only the danger tone would be a component asserting that
- * every page-level condition is an emergency, which is the same mistake in the
- * other direction.
+ * `danger` renders `role="alert"` (implicitly assertive, implicitly atomic);
+ * `warning`, `success` and `info` render `role="status"` (implicitly polite).
+ * `warning` stays polite because it advises: it does not report a failure the
+ * user must act on now, and only that earns an interruption.
+ *
+ * That is the whole reason this component does not simply take the lore variant
+ * matrix's `color` axis like `LoreButton` and `LoreBadge` do:
+ * `data-color="warning"` is a hue, and this input decides whether a
+ * screen-reader user's current sentence is cut off. A component with only the
+ * danger tone would be a component asserting that every page-level condition is
+ * an emergency, which is the same mistake in the other direction.
  *
  * Both roles are native live regions, so **the element must be in the DOM at the
  * moment its content appears** for a screen reader to announce it. Both of the
@@ -50,6 +72,12 @@ export type LoreAlertTone = 'danger' | 'info';
  *
  * <!-- or kept mounted and filled later; the role announces the change -->
  * <lore-alert tone="info" [heading]="notice()"></lore-alert>
+ *
+ * <!-- advice and confirmation are coloured, but still polite -->
+ * <lore-alert tone="warning" heading="This material is used by 3 open orders.">
+ *   Changes apply to those orders too.
+ * </lore-alert>
+ * <lore-alert tone="success" heading="All 12 rows were imported." />
  * ```
  *
  * An always-mounted alert that renders *nothing* is inert and costs a maker
@@ -109,18 +137,7 @@ export class LoreAlert {
   constructor() {
     classes(() => [
       'flex w-full flex-col gap-1 rounded-lg border p-3 text-sm',
-      this.tone() === 'danger'
-        ? // The wash and the ink are the pairing the token layer already measured
-          // for the table's failure body: 8% of --destructive under
-          // --destructive-soft-fg is 7.28:1 in light and 7.80:1 in dark. Plain
-          // `text-destructive` on the same wash is 4.06:1 and fails AA, which is
-          // the trap --destructive-soft-fg was created for (tokens.css).
-          'border-destructive/30 bg-destructive/8 text-(--destructive-soft-fg)'
-        : // Neutral, and deliberately not a second colour: an informational
-          // condition on --muted reads as part of the page rather than as a
-          // weaker failure. --foreground on --muted is the highest-contrast pair
-          // in the token set.
-          'border-border bg-muted text-foreground',
+      TONE_CLASSES[this.tone()],
     ]);
   }
 }

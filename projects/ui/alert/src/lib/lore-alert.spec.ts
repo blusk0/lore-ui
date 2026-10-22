@@ -9,7 +9,8 @@ import { LoreAlert, type LoreAlertTone } from './lore-alert';
  * The host composes the alert as 140's form will: a refusal summary that appears
  * beside the field messages, and an informational condition on the same page —
  * two tones at once, because the property that matters is not "an alert renders"
- * but "the loud one is the failure and the quiet one is not".
+ * but "the loud one is the failure and the quiet one is not". The advisory and
+ * the confirmation sit beside them: coloured, and still quiet.
  */
 @Component({
   imports: [LoreAlert, LoreButton],
@@ -22,6 +23,8 @@ import { LoreAlert, type LoreAlertTone } from './lore-alert';
     }
 
     <lore-alert tone="info" heading="This material is archived." />
+    <lore-alert tone="warning" heading="This material is used by 3 open orders." />
+    <lore-alert tone="success" heading="All 12 rows were imported." />
   `,
 })
 class Host {
@@ -44,6 +47,8 @@ async function setup() {
     fixture,
     el,
     notice: () => el.querySelector<HTMLElement>('lore-alert[data-tone="info"]')!,
+    advisory: () => el.querySelector<HTMLElement>('lore-alert[data-tone="warning"]')!,
+    confirmation: () => el.querySelector<HTMLElement>('lore-alert[data-tone="success"]')!,
     refusal: () => el.querySelector<HTMLElement>('lore-alert[data-tone="danger"]'),
     async refuse() {
       fixture.componentInstance.refused.set(true);
@@ -76,6 +81,20 @@ describe('LoreAlert', () => {
     // cuts off whatever a screen reader is reading is the same defect as a silent
     // failure, in the other direction.
     expect(notice().getAttribute('role')).not.toBe('alert');
+  });
+
+  it('announces an advisory politely too — it advises, it reports no failure', async () => {
+    const { advisory } = await setup();
+
+    // Coloured like a caution, but nothing has failed and nothing must be done
+    // this second, so it does not earn an interruption.
+    expect(advisory().getAttribute('role')).toBe('status');
+  });
+
+  it('announces a confirmation politely, as role="status"', async () => {
+    const { confirmation } = await setup();
+
+    expect(confirmation().getAttribute('role')).toBe('status');
   });
 
   it('renders its heading and its projected body, heading first', async () => {
@@ -127,7 +146,33 @@ describe('LoreAlert', () => {
     expect(classes).not.toContain('destructive');
   });
 
-  it('reports no axe violations, in either tone', async () => {
+  it('paints the warning wash and its measured soft ink', async () => {
+    const { el, advisory } = await setup();
+
+    const classes = advisory().getAttribute('class') ?? '';
+    // --warning itself on its 8% wash is 3.24:1; --warning-soft-fg is the ink
+    // tokens.css measured for that wash.
+    expect(classes).toContain('border-warning/30');
+    expect(classes).toContain('bg-warning/8');
+    expect(classes).toContain('text-(--warning-soft-fg)');
+    expect(classes).not.toContain('destructive');
+
+    expectOnlyTokenColours(el);
+  });
+
+  it('paints the success wash and its measured soft ink', async () => {
+    const { el, confirmation } = await setup();
+
+    const classes = confirmation().getAttribute('class') ?? '';
+    expect(classes).toContain('border-success/30');
+    expect(classes).toContain('bg-success/8');
+    expect(classes).toContain('text-(--success-soft-fg)');
+    expect(classes).not.toContain('destructive');
+
+    expectOnlyTokenColours(el);
+  });
+
+  it('reports no axe violations, in any tone', async () => {
     const { el, refuse } = await setup();
     await refuse();
 
