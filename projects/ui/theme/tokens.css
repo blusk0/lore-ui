@@ -186,6 +186,17 @@
      (icon/accent) carries on white/tint; the solid fill pairs with deep ink. */
   --warning: var(--warning-600);
   --warning-foreground: oklch(0.22 0.03 75);
+  /* Soft-surface ink for an 8% --warning wash, the --destructive-soft-fg idiom:
+     --warning itself on that wash is 3.24:1. warning-700 on it 4.91:1 over the
+     page, 5.21:1 over a card. */
+  --warning-soft-fg: var(--warning-700);
+  /* success-600 is also plain text (`text-success`): 4.87:1 on the page, 5.19:1
+     on a card; white ink on it 5.19:1. success-500 fails as text (3.48 / 3.71). */
+  --success: var(--success-600);
+  --success-foreground: white;
+  /* --success on its own 8% wash is 4.39:1 over the page; success-700 on it
+     5.97:1 over the page, 6.35:1 over a card. */
+  --success-soft-fg: var(--success-700);
   --border: var(--gray-200);
   --input: var(--gray-200);
   --ring: var(--primary-500);
@@ -245,6 +256,17 @@
      dark surface; ink stays deep (same --vc-on as light, mirroring data-color). */
   --warning: var(--warning-400);
   --warning-foreground: oklch(0.22 0.03 75);
+  /* warning-300 on an 8% --warning wash: 10.98:1 over the page, 9.80:1 over a
+     card. */
+  --warning-soft-fg: var(--warning-300);
+  /* A light fill with deep ink, as dark [data-color='success'] (white on
+     success-500 is 3.71:1). Deep ink on it 7.08:1; as text 7.72:1 on the page,
+     7.07:1 on a card, 6.58:1 on a popover. */
+  --success: var(--success-400);
+  --success-foreground: var(--success-ink);
+  /* success-300 on an 8% --success wash: 9.88:1 over the page, 8.85:1 over a
+     card. */
+  --success-soft-fg: var(--success-300);
   /* hairlines: 1.41:1 on the card, 1.54:1 on the page */
   --border: oklch(0.32 0.012 262);
   --input: oklch(0.32 0.012 262);
@@ -270,25 +292,28 @@
    so `bg-destructive`'s partner utility actually resolves; without this
    the variable exists but `text-destructive-foreground` is not a class.
 
-   warning is not in the preset AT ALL — neither --color-warning nor its
-   foreground — so both are registered here, the same inline idiom, off the
-   --warning / --warning-foreground semantics above. This mints the base
-   family only (`bg-warning`, `text-warning`, `border-warning`,
-   `text-warning-foreground`, and their /opacity modifiers); the numeric
-   scale (`text-warning-600` …) is deliberately absent, matching every other
-   semantic colour here (destructive/primary/success are single-token — the
-   --warning-300…700 primitives live outside the --color-* namespace on
+   warning and success are not in the preset AT ALL — neither the colour nor
+   its foreground — so both pairs are registered here, the same inline idiom,
+   off the semantics above. This mints the base family only (`bg-success`,
+   `text-success`, `border-success`, `text-success-foreground`, the warning
+   equivalents, and their /opacity modifiers); the numeric scale
+   (`text-warning-600` …) is deliberately absent, matching every other
+   semantic colour here (each is single-token — the --warning-300…700 and
+   --success-300…700 primitives live outside the --color-* namespace on
    purpose and generate no utilities).
 
-   --destructive-soft-fg is deliberately NOT here. It is consumed once, by
-   components.css, through var() — registering it would mint a
-   `text-destructive-soft-fg` utility nobody asked for, and the rule is that
-   @theme is for tokens that should become classes. Same reason --space,
-   --control-h-* and the tier 3 knobs below are plain :root variables. */
+   The --*-soft-fg tokens are deliberately NOT here. They are consumed through
+   var() — components.css, and LoreAlert's `text-(--destructive-soft-fg)`
+   variable utility — so registering them would mint `text-*-soft-fg`
+   utilities nobody asked for, and the rule is that @theme is for tokens that
+   should become classes. Same reason --space, --control-h-* and the tier 3
+   knobs below are plain :root variables. */
 @theme inline {
   --color-destructive-foreground: var(--destructive-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
 }
 
 /* ── Tier 3: component knobs — the app shell & the dense table ─────
