@@ -1,5 +1,6 @@
 import { Component, provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { axe } from 'vitest-axe';
 import { LoreButton } from '@lore/ui/button';
 import { expectOnlyTokenColours } from '@lore/ui/testing';
@@ -30,6 +31,47 @@ import { LoreAlert, type LoreAlertTone } from './lore-alert';
 class Host {
   readonly refused = signal(false);
   readonly tone = signal<LoreAlertTone>('danger');
+}
+
+/**
+ * lore-dam's shapes: explanatory boxes written into the template as
+ * `role="note"`, a box whose role the feature decides at runtime, and the four
+ * tones left to choose their own role.
+ */
+@Component({
+  imports: [LoreAlert],
+  template: `
+    <lore-alert tone="info" role="note" heading="Archived materials stay readable." />
+    <lore-alert tone="warning" role="note" heading="Imports skip rows without a SKU." />
+    <lore-alert data-testid="bound" tone="info" [role]="role()" heading="Session ending." />
+    @for (tone of tones; track tone) {
+      <lore-alert data-testid="default" [tone]="tone" />
+    }
+  `,
+})
+class RoleHost {
+  readonly role = signal<string | null>('alert');
+  readonly tones: LoreAlertTone[] = ['danger', 'warning', 'success', 'info'];
+}
+
+async function setupRoles() {
+  await TestBed.configureTestingModule({
+    imports: [RoleHost],
+    providers: [provideZonelessChangeDetection()],
+  }).compileComponents();
+
+  const fixture = TestBed.createComponent(RoleHost);
+  await fixture.whenStable();
+
+  const el = fixture.nativeElement as HTMLElement;
+
+  return {
+    fixture,
+    el,
+    notes: () => [...el.querySelectorAll<HTMLElement>('lore-alert[data-tone]')].slice(0, 2),
+    bound: () => el.querySelector<HTMLElement>('lore-alert[data-testid="bound"]')!,
+    defaults: () => [...el.querySelectorAll<HTMLElement>('lore-alert[data-testid="default"]')],
+  };
 }
 
 async function setup() {
@@ -170,6 +212,49 @@ describe('LoreAlert', () => {
     expect(classes).not.toContain('destructive');
 
     expectOnlyTokenColours(el);
+  });
+
+  it('keeps a static role="note" — it reaches the input, and is no live region', async () => {
+    const { fixture, notes } = await setupRoles();
+
+    // The static attribute is the input's value, not just an attribute the host
+    // binding would overwrite after first render.
+    const first = fixture.debugElement.query(By.directive(LoreAlert));
+    expect(first.componentInstance.role()).toBe('note');
+
+    for (const note of notes()) {
+      expect(note.getAttribute('role')).toBe('note');
+      expect(note.hasAttribute('aria-live')).toBe(false);
+    }
+
+    // The tone still paints: a note is not a colourless box.
+    expect(notes()[1].getAttribute('class')).toContain('text-(--warning-soft-fg)');
+  });
+
+  it('follows a bound [role], and falls back to the tone when it clears', async () => {
+    const { fixture, bound } = await setupRoles();
+
+    // A neutral tone that must still interrupt.
+    expect(bound().getAttribute('role')).toBe('alert');
+
+    fixture.componentInstance.role.set('note');
+    await fixture.whenStable();
+    expect(bound().getAttribute('role')).toBe('note');
+
+    fixture.componentInstance.role.set(null);
+    await fixture.whenStable();
+    expect(bound().getAttribute('role')).toBe('status');
+  });
+
+  it('leaves the tone-derived role alone when no role is given', async () => {
+    const { defaults } = await setupRoles();
+
+    expect(defaults().map((alert) => alert.getAttribute('role'))).toEqual([
+      'alert',
+      'status',
+      'status',
+      'status',
+    ]);
   });
 
   it('reports no axe violations, in any tone', async () => {

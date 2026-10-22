@@ -84,6 +84,28 @@ const TONE_CLASSES: Record<LoreAlertTone, string> = {
  * nothing, so a caller who cannot be sure of the insertion order should prefer
  * the second shape.
  *
+ * ### When the caller overrides the role
+ *
+ * `role` replaces the tone's role on the host; the tone still picks the colour.
+ * Reach for it when the box is not reporting a condition at all:
+ *
+ *   · `role="note"` — a static explanation that is part of the page from first
+ *     render. It is not a live region, so nothing is announced; a screen reader
+ *     meets it in reading order like any other paragraph. Most informational
+ *     boxes that are written into the template, not inserted, are this.
+ *   · `role="alert"` / `role="status"` — the live roles, for a box whose tone's
+ *     colour and urgency disagree: a neutral box that must still interrupt.
+ *   · `role="none"` — no role; the box is presentation around its content.
+ *
+ * ```html
+ * <lore-alert tone="info" role="note" heading="Archived materials stay readable.">
+ *   They drop out of pickers but keep their history.
+ * </lore-alert>
+ * <lore-alert tone="info" role="alert" heading="Your session expires in 1 minute." />
+ * ```
+ *
+ * Unset, the tone decides, as above.
+ *
  * ## State in, nothing out
  *
  * There is no retry output and no dismiss button (D1: state in, event out — and
@@ -132,7 +154,15 @@ export class LoreAlert {
    */
   readonly heading = input<string | null>(null);
 
-  protected readonly _role = computed(() => (this.tone() === 'danger' ? 'alert' : 'status'));
+  /**
+   * Overrides the tone's role — `'note'`, `'alert'`, `'status'` or `'none'`. A
+   * static `role="note"` on the host binds here, so the host binding keeps it.
+   */
+  readonly role = input<string | null>(null);
+
+  protected readonly _role = computed(
+    () => this.role() ?? (this.tone() === 'danger' ? 'alert' : 'status'),
+  );
 
   constructor() {
     classes(() => [
