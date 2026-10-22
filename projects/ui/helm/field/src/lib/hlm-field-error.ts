@@ -14,7 +14,8 @@ import { BrnField, BrnFieldA11yService } from '@spartan-ng/brain/field';
 import { classes } from '@lore/ui/helm/utils';
 
 @Component({
-  selector: 'hlm-field-error',
+  // The attribute form (`<p hlmFieldError>`) is lore-dam's call-site idiom, as with `[hlmField]`.
+  selector: 'hlm-field-error, [hlmFieldError]',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     role: 'alert',

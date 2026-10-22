@@ -1,5 +1,6 @@
 import { Component, provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HlmFieldImports } from '@lore/ui/helm/field';
 import { expectOnlyTokenColours } from '@lore/ui/testing';
 import { HlmInput } from './hlm-input';
@@ -136,5 +137,145 @@ describe('HlmInput', () => {
     expect(at('text').id).toBeTruthy();
     expect(at('multiline').id).toBeTruthy();
     expect(at('text').id).not.toBe(at('multiline').id);
+  });
+});
+
+/**
+ * The caller-owned half of the ARIA story: a control that is NOT inside a field
+ * computes its own invalid state and description (lore-dam's rules-panel rows),
+ * and a control inside one must still be driven by the field.
+ */
+@Component({
+  imports: [HlmInput, HlmFieldImports, ReactiveFormsModule],
+  template: `
+    <input hlmInput data-testid="loose" aria-label="Loose" [aria-invalid]="looseInvalid()"
+      [aria-describedby]="hint()" />
+    <input hlmInput data-testid="loose-control" aria-label="Loose, with a control"
+      [formControl]="required" [aria-invalid]="controlOverride()" />
+    <p id="hint-a">First hint.</p>
+    <p id="hint-b">Second hint.</p>
+
+    <hlm-field [messages]="messages()">
+      <label hlmLabel>Code</label>
+      <input hlmInput data-testid="fielded" [formControl]="code" [aria-describedby]="hint()" />
+      <p hlmFieldDescription>Unique within the tenant.</p>
+    </hlm-field>
+  `,
+})
+class CallerHost {
+  readonly looseInvalid = signal<boolean | null>(true);
+  readonly controlOverride = signal<boolean | null>(null);
+  readonly hint = signal('hint-a');
+  readonly messages = signal<readonly string[]>([]);
+  readonly required = new FormControl('', Validators.required);
+  readonly code = new FormControl('A0', Validators.required);
+}
+
+async function setupCaller() {
+  await TestBed.configureTestingModule({
+    imports: [CallerHost],
+    providers: [provideZonelessChangeDetection()],
+  }).compileComponents();
+
+  const fixture = TestBed.createComponent(CallerHost);
+  await fixture.whenStable();
+
+  const el = fixture.nativeElement as HTMLElement;
+  return {
+    fixture,
+    host: fixture.componentInstance,
+    at: (id: string) => el.querySelector<HTMLElement>(`[data-testid="${id}"]`)!,
+    settle: () => fixture.whenStable(),
+  };
+}
+
+describe('HlmInput, ARIA the caller owns', () => {
+  it("outside a field, the caller's [aria-invalid] survives first render and tracks updates", async () => {
+    const { host, at, settle } = await setupCaller();
+
+    // Brain's BrnInput host binding writes null here on the first pass; the
+    // caller's value must still be what lands.
+    expect(at('loose').getAttribute('aria-invalid')).toBe('true');
+
+    host.looseInvalid.set(false);
+    await settle();
+    expect(at('loose').getAttribute('aria-invalid')).toBeNull();
+
+    host.looseInvalid.set(true);
+    await settle();
+    expect(at('loose').getAttribute('aria-invalid')).toBe('true');
+
+    host.looseInvalid.set(null);
+    await settle();
+    expect(at('loose').getAttribute('aria-invalid')).toBeNull();
+  });
+
+  it("outside a field, brain's control validity stands until the caller says otherwise", async () => {
+    const { host, at, settle } = await setupCaller();
+
+    host.required.markAsTouched();
+    host.required.updateValueAndValidity();
+    await settle();
+    expect(at('loose-control').getAttribute('aria-invalid')).toBe('true');
+
+    host.controlOverride.set(false);
+    await settle();
+    expect(at('loose-control').getAttribute('aria-invalid')).toBeNull();
+
+    // The caller's true holds while brain's answer flips under it.
+    host.controlOverride.set(true);
+    await settle();
+    host.required.setValue('filled');
+    await settle();
+    expect(at('loose-control').getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it("inside a field, the field's invalid state drives aria-invalid", async () => {
+    const { host, at, settle } = await setupCaller();
+
+    expect(at('fielded').getAttribute('aria-invalid')).toBeNull();
+
+    host.messages.set(['Code is taken.']);
+    await settle();
+    expect(at('fielded').getAttribute('aria-invalid')).toBe('true');
+
+    // Brain rewrites the attribute when the control's validity flips; the
+    // field's messages still hold it invalid.
+    host.code.setValue('A1');
+    await settle();
+    host.code.setValue('');
+    await settle();
+    host.code.setValue('A2');
+    await settle();
+    expect(at('fielded').getAttribute('aria-invalid')).toBe('true');
+
+    host.messages.set([]);
+    await settle();
+    expect(at('fielded').getAttribute('aria-invalid')).toBeNull();
+  });
+
+  it("outside a field, the caller's [aria-describedby] survives first render and tracks updates", async () => {
+    const { host, at, settle } = await setupCaller();
+
+    expect(at('loose').getAttribute('aria-describedby')).toBe('hint-a');
+
+    host.hint.set('hint-b');
+    await settle();
+    expect(at('loose').getAttribute('aria-describedby')).toBe('hint-b');
+  });
+
+  it("inside a field, the caller's [aria-describedby] merges with the field's ids", async () => {
+    const { host, at, settle } = await setupCaller();
+    const ids = () => (at('fielded').getAttribute('aria-describedby') ?? '').split(/\s+/);
+
+    expect(ids()).toContain('hint-a');
+    expect(ids().length).toBe(2);
+
+    host.hint.set('hint-b');
+    host.messages.set(['Code is taken.']);
+    await settle();
+    expect(ids()).toContain('hint-b');
+    expect(ids()).not.toContain('hint-a');
+    expect(ids().length).toBe(3);
   });
 });

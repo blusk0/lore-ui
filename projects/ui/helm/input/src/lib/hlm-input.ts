@@ -1,5 +1,15 @@
-import { computed, Directive, ElementRef, inject } from '@angular/core';
-import { BrnFieldControlDescribedBy } from '@spartan-ng/brain/field';
+import { BooleanInput } from '@angular/cdk/coercion';
+import {
+  afterRenderEffect,
+  booleanAttribute,
+  computed,
+  Directive,
+  ElementRef,
+  inject,
+  input,
+  Renderer2,
+} from '@angular/core';
+import { BrnFieldControl, BrnFieldControlDescribedBy } from '@spartan-ng/brain/field';
 import { BrnInput } from '@spartan-ng/brain/input';
 import { HlmField } from '@lore/ui/helm/field';
 import { classes } from '@lore/ui/helm/utils';
@@ -23,14 +33,19 @@ import { classes } from '@lore/ui/helm/utils';
  * apply unchanged. `<div hlmInput>` is not supported and never will be — brain
  * cannot make a div hold a value.
  *
- * ## `aria-invalid` is bound here, not left to brain
+ * ## `aria-invalid` is written here, not left to brain
  *
  * `BrnInput` derives `aria-invalid` from the Angular control's validity alone,
  * which cannot see a `422`: a server refusal arrives on a form whose client-side
- * validators all pass. The binding below reads `HlmField.invalid()` — brain's
- * answer *unioned* with "this field has messages" — so it can only widen what
- * `BrnInput` wrote, never narrow it. Outside a field there is nothing to read and
- * brain's own binding stands.
+ * validators all pass. Inside a field this reads `HlmField.invalid()` — brain's
+ * answer *unioned* with "this field has messages". Outside a field the caller's
+ * `[aria-invalid]` input decides, falling back to brain's control validity.
+ *
+ * Pass it as `[aria-invalid]`, never `[attr.aria-invalid]`: an attribute binding
+ * feeds no input, and brain's host binding overwrites it on first render. The
+ * same holds for `[aria-describedby]`. The write is an after-render effect that
+ * also tracks brain's signal, so it lands after brain's host binding every time
+ * brain rewrites the attribute.
  */
 @Directive({
   selector: 'input[hlmInput], textarea[hlmInput], select[hlmInput]',
@@ -41,19 +56,40 @@ import { classes } from '@lore/ui/helm/utils';
   host: {
     'data-slot': 'input',
     class: 'lore-ctl',
-    '[attr.aria-invalid]': '_invalid() ? "true" : null',
   },
 })
 export class HlmInput {
   private readonly _field = inject(HlmField, { optional: true });
+  private readonly _control = inject(BrnFieldControl);
   private readonly _isTextarea =
     inject(ElementRef<HTMLElement>).nativeElement.tagName === 'TEXTAREA';
   private readonly _isSelect =
     inject(ElementRef<HTMLElement>).nativeElement.tagName === 'SELECT';
 
-  protected readonly _invalid = computed(() => this._field?.invalid() ?? false);
+  /** The caller's invalid state; outside a field it wins over brain's. Unset defers. */
+  readonly ariaInvalid = input<boolean | undefined, BooleanInput>(undefined, {
+    alias: 'aria-invalid',
+    transform: (value: BooleanInput) => (value == null ? undefined : booleanAttribute(value)),
+  });
+
+  protected readonly _invalid = computed(() => {
+    const own = this.ariaInvalid();
+    if (this._field) return this._field.invalid() || own === true;
+    return own ?? this._control.invalid() ?? false;
+  });
 
   constructor() {
+    const renderer = inject(Renderer2);
+    const host = inject(ElementRef<HTMLElement>).nativeElement;
+    afterRenderEffect({
+      write: () => {
+        // Tracked so brain's own rewrite of the attribute re-triggers this one.
+        this._control.invalid();
+        if (this._invalid()) renderer.setAttribute(host, 'aria-invalid', 'true');
+        else renderer.removeAttribute(host, 'aria-invalid');
+      },
+    });
+
     classes(() => [
       // `.lore-ctl` (theme/components.css) is the shared control contract and
       // carries the height, the radius, the type ramp, the focus ring and the

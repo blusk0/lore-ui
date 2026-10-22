@@ -199,3 +199,74 @@ describe('helm form primitives (composition)', () => {
     expect(checkbox.hasAttribute('disabled')).toBe(true);
   });
 });
+
+/** The two `HlmFieldError` forms side by side, so any divergence between them fails. */
+@Component({
+  imports: [ReactiveFormsModule, HlmFieldImports, HlmInput],
+  template: `
+    <div hlmField>
+      <label hlmFieldLabel for="title">Title</label>
+      <input hlmInput id="title" [formControl]="title" />
+      <p hlmFieldError id="title-error" validator="required">A title is required.</p>
+    </div>
+
+    <div hlmField>
+      <label hlmFieldLabel for="alt">Alt text</label>
+      <input hlmInput id="alt" [formControl]="alt" />
+      <hlm-field-error id="alt-error" validator="required">Alt text is required.</hlm-field-error>
+    </div>
+  `,
+})
+class ErrorFormsHost {
+  readonly title = new FormControl('', Validators.required);
+  readonly alt = new FormControl('', Validators.required);
+}
+
+describe('HlmFieldError, attribute and element forms', () => {
+  async function setup() {
+    await TestBed.configureTestingModule({ imports: [ErrorFormsHost] }).compileComponents();
+    const fixture = TestBed.createComponent(ErrorFormsHost);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    return { fixture, el, host: fixture.componentInstance };
+  }
+
+  it('upgrades <p hlmFieldError> into the same error the element form is', async () => {
+    const { el } = await setup();
+    const error = el.querySelector('p#title-error')!;
+
+    expect(error.getAttribute('data-slot')).toBe('field-error');
+    expect(error.getAttribute('role')).toBe('alert');
+    expect([...error.classList]).toContain('text-destructive');
+    // Hidden, and its content not rendered, until the control is touched + invalid.
+    expect(error.hasAttribute('hidden')).toBe(true);
+    expect(error.textContent).not.toContain('A title is required.');
+  });
+
+  it('shows on touched + invalid and links itself into the control aria-describedby, like the element', async () => {
+    const { fixture, el, host } = await setup();
+    const describedBy = (id: string) =>
+      (el.querySelector(`input#${id}`)!.getAttribute('aria-describedby') ?? '').split(/\s+/);
+
+    expect(describedBy('title')).not.toContain('title-error');
+
+    for (const control of [host.title, host.alt]) {
+      control.markAsTouched();
+      control.updateValueAndValidity();
+    }
+    await fixture.whenStable();
+
+    const attr = el.querySelector('p#title-error')!;
+    const element = el.querySelector('hlm-field-error#alt-error')!;
+    expect(attr.hasAttribute('hidden')).toBe(false);
+    expect(attr.textContent).toContain('A title is required.');
+    expect(element.hasAttribute('hidden')).toBe(false);
+    expect(describedBy('title')).toContain('title-error');
+    expect(describedBy('alt')).toContain('alt-error');
+
+    host.title.setValue('Coastline');
+    await fixture.whenStable();
+    expect(attr.hasAttribute('hidden')).toBe(true);
+    expect(describedBy('title')).not.toContain('title-error');
+  });
+});
