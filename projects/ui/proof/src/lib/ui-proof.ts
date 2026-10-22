@@ -20,6 +20,7 @@ import { HlmTextarea } from '@lore/ui/helm/textarea';
 import { HlmTooltipImports } from '@lore/ui/helm/tooltip';
 import { LoreBadge, LoreChip } from '@lore/ui/badge';
 import { LoreButton, type LoreColor, type LoreVariant } from '@lore/ui/button';
+import { LoreLink } from '@lore/ui/link';
 
 /**
  * The design-system proof page: every primitive 120 delivers, rendered once so
@@ -35,6 +36,7 @@ import { LoreButton, type LoreColor, type LoreVariant } from '@lore/ui/button';
     LoreButton,
     LoreBadge,
     LoreChip,
+    LoreLink,
     HlmAvatarImports,
     HlmBreadcrumbImports,
     HlmCheckboxImports,
@@ -105,6 +107,20 @@ import { LoreButton, type LoreColor, type LoreVariant } from '@lore/ui/button';
         <button loreChip color="primary" [suggested]="true">✨ coastline</button>
         <button loreChip color="danger">needs review</button>
       </div>
+
+      <h2 class="mt-8 mb-4 text-sm font-medium text-muted-foreground">
+        Links — strong opens a record, plain sits beside it, prose lives in a sentence
+      </h2>
+      <dl class="grid w-fit grid-cols-[auto_auto] gap-x-8 gap-y-1 text-sm">
+        <dt class="text-muted-foreground">Material</dt>
+        <dd><a loreLink href="#proof-links">MAT-0001</a></dd>
+        <dt class="text-muted-foreground">Supplier</dt>
+        <dd><a loreLink variant="plain" href="#proof-links">Acme Botanicals</a></dd>
+      </dl>
+      <p id="proof-links" class="pt-3 text-muted-foreground">
+        Reorder points assume a 14-day lead time.
+        <a loreLink variant="prose" href="#proof-links">Change the lead time</a> in settings.
+      </p>
 
       <h2 class="mt-8 mb-4 text-sm font-medium text-muted-foreground">Overlays & navigation</h2>
       <div class="flex flex-wrap items-center gap-2">
@@ -333,7 +349,7 @@ import { LoreButton, type LoreColor, type LoreVariant } from '@lore/ui/button';
                 [attr.data-active]="index === 0 ? 'true' : null"
                 [attr.data-selected]="index === 2 ? 'true' : null"
               >
-                <td>{{ row.code }}</td>
+                <td><a loreLink href="#proof-links">{{ row.code }}</a></td>
                 <td>{{ row.name }}</td>
                 <td><span loreBadge variant="soft" [color]="row.color">{{ row.status }}</span></td>
                 <td data-numeric class="tabular">{{ row.onHand }}</td>

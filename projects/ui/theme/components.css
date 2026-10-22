@@ -179,6 +179,55 @@
     border-color: color-mix(in oklab, var(--vc) 55%, transparent);
   }
 
+  /* ── text link: an <a> inside a line of text (LoreLink) ──
+     Not a .lore-ctl: no height, no padding, nothing that breaks the line it
+     sits in, and it wraps with the sentence. The ink is inherited, so the
+     link adds no text pairing of its own — it reads at whatever ratio the
+     text around it was measured at. The decoration is currentColor.
+
+       <a loreLink routerLink="…">MAT-0001</a>                 strong (default)
+       <a loreLink variant="plain" routerLink="…">Acme</a>
+       <p>… <a loreLink variant="prose" routerLink="…">change the lead time</a></p>
+
+     strong and plain carry no resting cue but their position (a cell, a list,
+     a trail) and are marked on hover; prose is underlined at rest, because in
+     a sentence of the same ink colour cannot be the cue (WCAG 1.4.1). */
+  .lore-link {
+    color: inherit;
+    font-weight: inherit;
+    text-decoration-line: none;
+    text-decoration-thickness: from-font;
+    text-underline-offset: 0.2em;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .lore-link[data-variant='strong'] {
+    font-weight: 500;
+  }
+
+  .lore-link:hover,
+  .lore-link[data-variant='prose'] {
+    text-decoration-line: underline;
+  }
+
+  /* prose is underlined already, so its hover cue is a heavier line. */
+  .lore-link[data-variant='prose']:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  /* The same --ring, width and offset as .lore-ctl. --ring against the
+     surfaces a link lands on (WCAG 1.4.11 asks 3:1):
+         light primary-500  page 4.18  card 4.45  --muted 4.05
+                            header band 4.14  --accent 3.78
+                            selected row 3.75   ← lowest
+         dark  primary-400  page 7.21  card 6.60  popover 6.15  --muted 5.38
+                            header band 5.90  --accent 5.04  selected row 5.66 */
+  .lore-link:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
   /* ── card: the raised surface panels, stat tiles and forms sit on ──
      The `bg-card border rounded-lg` idiom the apps already hand-roll, plus the
      resting elevation it never had, so a page reads as surfaces on a ground

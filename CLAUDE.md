@@ -26,8 +26,9 @@ identities: TS2345 / NG3004 / NG0203); the tarball is the fix, not an inconvenie
   generated-then-owned, built against `@spartan-ng/brain` 1.3. Regeneration:
   `ng g @spartan-ng/cli:ui <primitive>` guided by `components.json` here (the apps no longer
   have one). `projects/ui/helm/README.md` carries the restyle checklist.
-- `projects/ui/{button,badge,alert,toast,proof}/` — the lore tier (`LoreButton`, `LoreBadge`/
-  `LoreChip`, `LoreAlert`, `LoreToast`, and the `UiProof` styleguide page both apps route to).
+- `projects/ui/{button,badge,link,alert,toast,proof}/` — the lore tier (`LoreButton`, `LoreBadge`/
+  `LoreChip`, `LoreLink`, `LoreAlert`, `LoreToast`, and the `UiProof` styleguide page both apps
+  route to).
 - `projects/ui/testing/` — `@lore/ui/testing`, the token-contract vitest helpers (no helm
   component may emit a stock Tailwind ramp or color literal; the specs enforce it).
 
