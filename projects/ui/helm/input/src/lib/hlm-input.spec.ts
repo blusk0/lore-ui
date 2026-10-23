@@ -404,13 +404,14 @@ describe('HlmInput on a file input', () => {
     );
   });
 
-  it('paints the file button as a quiet sm-height key from the semantic tokens', async () => {
+  it('paints the file button as an edged sm-height key from the semantic tokens', async () => {
     const { el, classesOf } = await setupFile();
     const classes = classesOf('file');
 
     expect(classes).toEqual(
       expect.arrayContaining([
         'file:h-(--control-h-sm)',
+        'file:border-muted-foreground',
         'file:bg-secondary',
         'file:text-secondary-foreground',
         'enabled:hover:file:bg-accent',
@@ -426,6 +427,27 @@ describe('HlmInput on a file input', () => {
         'aria-[invalid=true]:border-destructive',
       ]),
     );
+
+    expectOnlyTokenColours(el);
+  });
+
+  it('edges the file button with a token hairline that turns primary on hover, enabled only', async () => {
+    const { el, classesOf } = await setupFile();
+    const classes = classesOf('file');
+
+    // The secondary fill alone is 1.03:1 on the light control; the edge carries the shape.
+    expect(classes).toEqual(
+      expect.arrayContaining([
+        'file:border',
+        'file:border-muted-foreground',
+        'enabled:hover:file:border-primary',
+      ]),
+    );
+    expect(classes.filter((c) => c.startsWith('hover:file:'))).toEqual([]);
+    // Disabled dimming stays .lore-ctl's opacity: nothing repaints the button when disabled.
+    expect(classesOf('file-off').filter((c) => c.startsWith('disabled:file:'))).toEqual([
+      'disabled:file:cursor-not-allowed',
+    ]);
 
     expectOnlyTokenColours(el);
   });

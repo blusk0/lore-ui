@@ -122,14 +122,19 @@ export class HlmInput {
       // stray `visibility` rule nothing renders.
       'aria-[invalid=true]:border-destructive',
       this._isTextarea ? 'h-auto min-h-16 resize-y py-2 whitespace-pre-wrap' : '',
-      // The browser's file button becomes a quiet sm-height key inset in the
+      // The browser's file button becomes an sm-height key inset in the
       // control: the block padding centres it at either density (md less sm,
       // less the 1px hairline, halved). Secondary pair at rest, accent on hover.
+      // The muted-foreground edge is what makes it a button in light, where the
+      // secondary fill is 1.03:1 on the control: edge 5.20:1 light / 7.62:1 dark,
+      // and on hover it turns primary (5.69:1 / 7.22:1).
       this._isFile
         ? 'ps-[calc(var(--space)*1)] py-[calc((var(--control-h-md)-var(--control-h-sm))/2-1px)] ' +
           'file:me-[calc(var(--space)*3)] file:h-(--control-h-sm) file:rounded-sm ' +
           'file:px-[calc(var(--space)*3)] file:font-medium file:cursor-pointer ' +
+          'file:border file:border-muted-foreground ' +
           'file:bg-secondary file:text-secondary-foreground ' +
+          'enabled:hover:file:border-primary ' +
           'enabled:hover:file:bg-accent enabled:hover:file:text-accent-foreground ' +
           'disabled:file:cursor-not-allowed'
         : '',
