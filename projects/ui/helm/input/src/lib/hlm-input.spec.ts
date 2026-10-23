@@ -350,3 +350,114 @@ describe('HlmInput on a textarea, ARIA the caller owns', () => {
     expect(at('fielded').getAttribute('aria-invalid')).toBeNull();
   });
 });
+
+/** `input[type=file]` is a picker: a pointer, and the browser's button painted as a quiet key. */
+@Component({
+  imports: [HlmInput, HlmFieldImports],
+  template: `
+    <hlm-field [messages]="messages()">
+      <label hlmLabel>Certificate</label>
+      <input hlmInput type="file" data-testid="file" />
+    </hlm-field>
+    <input hlmInput type="file" data-testid="file-off" aria-label="Locked" disabled />
+
+    <input hlmInput data-testid="text" aria-label="Text" />
+    <textarea hlmInput data-testid="multiline" aria-label="Notes"></textarea>
+    <select hlmInput data-testid="picker" aria-label="Unit"><option>Each</option></select>
+  `,
+})
+class FileHost {
+  readonly messages = signal<readonly string[]>([]);
+}
+
+describe('HlmInput on a file input', () => {
+  async function setupFile() {
+    await TestBed.configureTestingModule({
+      imports: [FileHost],
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(FileHost);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    return {
+      el,
+      host: fixture.componentInstance,
+      at: (id: string) => el.querySelector<HTMLElement>(`[data-testid="${id}"]`)!,
+      classesOf: (id: string) => [...el.querySelector(`[data-testid="${id}"]`)!.classList],
+      settle: () => fixture.whenStable(),
+    };
+  }
+
+  it('takes the pointer of a picker and none of the text caret', async () => {
+    const { classesOf } = await setupFile();
+    const classes = classesOf('file');
+
+    expect(classes).toEqual(
+      expect.arrayContaining(['lore-ctl', 'block', 'w-full', 'cursor-pointer', 'select-none']),
+    );
+    expect(classes).not.toContain('cursor-text');
+    expect(classes).not.toContain('select-text');
+    // The disabled pointer is restated for the control and for its button.
+    expect(classes).toEqual(
+      expect.arrayContaining(['disabled:cursor-not-allowed', 'disabled:file:cursor-not-allowed']),
+    );
+  });
+
+  it('paints the file button as a quiet sm-height key from the semantic tokens', async () => {
+    const { el, classesOf } = await setupFile();
+    const classes = classesOf('file');
+
+    expect(classes).toEqual(
+      expect.arrayContaining([
+        'file:h-(--control-h-sm)',
+        'file:bg-secondary',
+        'file:text-secondary-foreground',
+        'enabled:hover:file:bg-accent',
+        'enabled:hover:file:text-accent-foreground',
+        'py-[calc((var(--control-h-md)-var(--control-h-sm))/2-1px)]',
+      ]),
+    );
+    // The control around the button keeps the text field's surface and invalid hairline.
+    expect(classes).toEqual(
+      expect.arrayContaining([
+        'border-input',
+        'bg-background',
+        'aria-[invalid=true]:border-destructive',
+      ]),
+    );
+
+    expectOnlyTokenColours(el);
+  });
+
+  it('is marked invalid through its field, like every hlmInput control', async () => {
+    const { host, at, settle } = await setupFile();
+
+    expect(at('file').id).toBeTruthy();
+    expect(at('file').getAttribute('aria-invalid')).toBeNull();
+
+    host.messages.set(['Only PDF files are accepted.']);
+    await settle();
+    expect(at('file').getAttribute('aria-invalid')).toBe('true');
+    expect((at('file-off') as HTMLInputElement).disabled).toBe(true);
+  });
+
+  it('leaves the text input, textarea and select class for class as they were at 0.7.0', async () => {
+    const { classesOf } = await setupFile();
+    const shared =
+      'block w-full text-start font-normal disabled:cursor-not-allowed border-input ' +
+      'bg-background text-foreground placeholder:text-muted-foreground ' +
+      'aria-[invalid=true]:border-destructive lore-ctl';
+    const sorted = (s: string) => s.split(' ').sort();
+
+    expect(classesOf('text').sort()).toEqual(sorted(`${shared} cursor-text select-text`));
+    expect(classesOf('multiline').sort()).toEqual(
+      sorted(`${shared} cursor-text select-text h-auto min-h-16 resize-y py-2 whitespace-pre-wrap`),
+    );
+    expect(classesOf('picker').sort()).toEqual(sorted(`${shared} cursor-pointer select-none`));
+    // None of them picks up the file button's rules.
+    for (const id of ['text', 'multiline', 'picker']) {
+      expect(classesOf(id).some((c) => c.includes('file:'))).toBe(false);
+    }
+  });
+});

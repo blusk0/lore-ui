@@ -249,6 +249,13 @@ import { LoreLink } from '@lore/ui/link';
           <textarea hlmInput id="proof-notes" formControlName="notes"></textarea>
         </div>
 
+        <!-- Unbound on purpose: Angular forms ship no value accessor for a file input. -->
+        <div hlmField>
+          <label hlmFieldLabel for="proof-source">Source file</label>
+          <input hlmInput type="file" id="proof-source" accept=".pdf,.jpg,.png" />
+          <p hlmFieldDescription>A PDF or an image, kept with the asset.</p>
+        </div>
+
         <div hlmField>
           <label hlmFieldLabel for="proof-license">License</label>
           <hlm-select formControlName="license">

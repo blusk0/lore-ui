@@ -65,6 +65,9 @@ export class HlmInput {
     inject(ElementRef<HTMLElement>).nativeElement.tagName === 'TEXTAREA';
   private readonly _isSelect =
     inject(ElementRef<HTMLElement>).nativeElement.tagName === 'SELECT';
+  // Read once, like the tag: a `[type]` binding that later turns to "file" is not followed.
+  private readonly _isFile =
+    (inject(ElementRef<HTMLElement>).nativeElement as HTMLInputElement).type === 'file';
 
   /** The caller's invalid state; outside a field it wins over brain's. Unset defers. */
   readonly ariaInvalid = input<boolean | undefined, BooleanInput>(undefined, {
@@ -96,11 +99,12 @@ export class HlmInput {
       // disabled story — one place to retune every control in the lore family.
       // The utilities below are the corrections a *text* control needs against a
       // base written for buttons: a button centres one word and refuses a text
-      // caret, a field is a full-width writing surface. A select is a picker,
-      // not a writing surface, so it keeps the pointer. Both branches restate the
-      // disabled pointer because the utilities layer outranks `.lore-ctl:disabled`.
+      // caret, a field is a full-width writing surface. A select and a file input
+      // are pickers, not writing surfaces, so they keep the pointer. Both branches
+      // restate the disabled pointer because the utilities layer outranks
+      // `.lore-ctl:disabled`.
       'block w-full text-start font-normal disabled:cursor-not-allowed',
-      this._isSelect ? 'cursor-pointer select-none' : 'cursor-text select-text',
+      this._isSelect || this._isFile ? 'cursor-pointer select-none' : 'cursor-text select-text',
       // Painted from the semantic surface tokens rather than from the
       // variant matrix's --vc channels: solid/soft/outlined/plain is an
       // *emphasis* axis for an actionable control, and a text field has no
@@ -118,6 +122,17 @@ export class HlmInput {
       // stray `visibility` rule nothing renders.
       'aria-[invalid=true]:border-destructive',
       this._isTextarea ? 'h-auto min-h-16 resize-y py-2 whitespace-pre-wrap' : '',
+      // The browser's file button becomes a quiet sm-height key inset in the
+      // control: the block padding centres it at either density (md less sm,
+      // less the 1px hairline, halved). Secondary pair at rest, accent on hover.
+      this._isFile
+        ? 'ps-[calc(var(--space)*1)] py-[calc((var(--control-h-md)-var(--control-h-sm))/2-1px)] ' +
+          'file:me-[calc(var(--space)*3)] file:h-(--control-h-sm) file:rounded-sm ' +
+          'file:px-[calc(var(--space)*3)] file:font-medium file:cursor-pointer ' +
+          'file:bg-secondary file:text-secondary-foreground ' +
+          'enabled:hover:file:bg-accent enabled:hover:file:text-accent-foreground ' +
+          'disabled:file:cursor-not-allowed'
+        : '',
     ]);
   }
 }
