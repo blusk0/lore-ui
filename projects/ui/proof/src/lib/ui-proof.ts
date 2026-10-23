@@ -16,7 +16,6 @@ import { HlmSkeletonImports } from '@lore/ui/helm/skeleton';
 import { HlmSwitchImports } from '@lore/ui/helm/switch';
 import { HlmTableImports } from '@lore/ui/helm/table';
 import { HlmTabsImports } from '@lore/ui/helm/tabs';
-import { HlmTextarea } from '@lore/ui/helm/textarea';
 import { HlmTooltipImports } from '@lore/ui/helm/tooltip';
 import { LoreBadge, LoreChip } from '@lore/ui/badge';
 import { LoreButton, type LoreColor, type LoreVariant } from '@lore/ui/button';
@@ -53,7 +52,6 @@ import { LoreLink } from '@lore/ui/link';
     HlmSwitchImports,
     HlmTableImports,
     HlmTabsImports,
-    HlmTextarea,
     HlmTooltipImports,
   ],
   template: `
@@ -248,7 +246,7 @@ import { LoreLink } from '@lore/ui/link';
 
         <div hlmField>
           <label hlmFieldLabel for="proof-notes">Notes</label>
-          <textarea hlmTextarea id="proof-notes" formControlName="notes"></textarea>
+          <textarea hlmInput id="proof-notes" formControlName="notes"></textarea>
         </div>
 
         <div hlmField>

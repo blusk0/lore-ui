@@ -279,3 +279,74 @@ describe('HlmInput, ARIA the caller owns', () => {
     expect(ids().length).toBe(3);
   });
 });
+
+/** The canonical textarea: `textarea[hlmInput]` takes the same caller-owned ARIA as an input. */
+@Component({
+  imports: [HlmInput, HlmFieldImports, ReactiveFormsModule],
+  template: `
+    <textarea hlmInput data-testid="loose" aria-label="Comment" [formControl]="comment"
+      [aria-invalid]="showError()"></textarea>
+
+    <hlm-field [messages]="messages()">
+      <label hlmLabel>Reason</label>
+      <textarea hlmInput data-testid="fielded" [formControl]="reason"></textarea>
+    </hlm-field>
+  `,
+})
+class TextareaHost {
+  readonly showError = signal<boolean | null>(true);
+  readonly messages = signal<readonly string[]>([]);
+  readonly comment = new FormControl('');
+  readonly reason = new FormControl('A0', Validators.required);
+}
+
+describe('HlmInput on a textarea, ARIA the caller owns', () => {
+  async function setupTextarea() {
+    await TestBed.configureTestingModule({
+      imports: [TextareaHost],
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(TextareaHost);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    return {
+      host: fixture.componentInstance,
+      at: (id: string) => el.querySelector<HTMLElement>(`[data-testid="${id}"]`)!,
+      settle: () => fixture.whenStable(),
+    };
+  }
+
+  it("outside a field, the caller's [aria-invalid] survives first render over a valid control", async () => {
+    const { host, at, settle } = await setupTextarea();
+
+    expect(at('loose').tagName).toBe('TEXTAREA');
+    expect(at('loose').getAttribute('aria-invalid')).toBe('true');
+
+    host.comment.setValue('typed');
+    await settle();
+    expect(at('loose').getAttribute('aria-invalid')).toBe('true');
+
+    host.showError.set(false);
+    await settle();
+    expect(at('loose').getAttribute('aria-invalid')).toBeNull();
+  });
+
+  it("inside a field, the field's messages hold aria-invalid while the control's validity flips", async () => {
+    const { host, at, settle } = await setupTextarea();
+
+    expect(at('fielded').getAttribute('aria-invalid')).toBeNull();
+
+    host.messages.set(['A reason is required for this transition.']);
+    await settle();
+    host.reason.setValue('');
+    await settle();
+    host.reason.setValue('A1');
+    await settle();
+    expect(at('fielded').getAttribute('aria-invalid')).toBe('true');
+
+    host.messages.set([]);
+    await settle();
+    expect(at('fielded').getAttribute('aria-invalid')).toBeNull();
+  });
+});

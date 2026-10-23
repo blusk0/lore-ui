@@ -25,7 +25,7 @@ import { classes } from '@lore/ui/helm/utils';
  *
  * ## Why the selector names three elements
  *
- * `textarea[hlmInput]` is here rather than only in `@lore/ui/helm/textarea`
+ * `textarea[hlmInput]` is the family's textarea (`hlmTextarea` is deprecated)
  * because it is the same control: the same brain primitive, the same tokens, the
  * same field wiring, differing only in whether it wraps. `select[hlmInput]` is
  * here because lore-dam's forms already put the directive on native selects, and

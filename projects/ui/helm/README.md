@@ -55,6 +55,10 @@ styled layer. Plan: `plans/120-design-system-components.md` (D2/D3).
   `data-variant`/`data-color`/`data-size` styled in `theme/components.css`.
   *Structural/behavioral* helm (dialog frames, menu panels, tables) keeps the
   cva + `hlm()`/`classes()` + Tailwind idiom in these owned files.
+- **`HlmTextarea` (`hlmTextarea`) is deprecated.** App code writes `<textarea hlmInput>`
+  (`@lore/ui/helm/input`), which sits on `.lore-ctl` like every other control. The
+  directive stays because `HlmInputGroupTextarea` hosts it and apps still import it;
+  it takes `[aria-invalid]` the same way `HlmInput` does.
 - **`HlmButton` (`hlmBtn`) is internal-only.** It exists because `input-group` (a
   dependency of `command`) needs it. App code uses `loreBtn` — the `LoreButton`
   directive, which lives beside it in `@lore/ui/helm/button` — never `hlmBtn`.
