@@ -1,5 +1,7 @@
 import { booleanAttribute, Directive, input } from '@angular/core';
-import type { LoreColor, LoreVariant } from '@lore/ui/button';
+import type { LoreColor, LoreSize, LoreVariant } from '@lore/ui/button';
+
+export type LoreBadgeSize = Extract<LoreSize, 'md' | 'sm'>;
 
 /**
  * lore's badge: a non-interactive status/label pill on the global variant
@@ -9,6 +11,10 @@ import type { LoreColor, LoreVariant } from '@lore/ui/button';
  * Spartan's badge primitive is deliberately not generated: it would introduce
  * a second variant vocabulary (default/secondary/destructive/outline) for a
  * component the matrix already solves.
+ *
+ * `size="sm"` is the compact count indicator, for overlaying an icon (e.g. an
+ * attention count on a collapsed nav entry). Pair it with `variant="solid"`:
+ * the soft fill lets what is underneath show through.
  */
 @Directive({
   selector: 'span[loreBadge]',
@@ -17,11 +23,13 @@ import type { LoreColor, LoreVariant } from '@lore/ui/button';
     '[attr.data-variant]': 'variant()',
     '[attr.data-color]': 'color()',
     '[attr.data-suggested]': 'suggested() ? "true" : null',
+    '[attr.data-size]': 'size() === "sm" ? "sm" : null',
   },
 })
 export class LoreBadge {
   readonly variant = input<LoreVariant>('soft');
   readonly color = input<LoreColor>('neutral');
+  readonly size = input<LoreBadgeSize>('md');
 
   /**
    * Marks the badge as machine-suggested and not yet confirmed by a human —

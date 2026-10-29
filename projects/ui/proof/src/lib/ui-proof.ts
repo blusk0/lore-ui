@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideInbox } from '@ng-icons/lucide';
 import { HlmAvatarImports } from '@lore/ui/helm/avatar';
 import { HlmBreadcrumbImports } from '@lore/ui/helm/breadcrumb';
 import { HlmCheckboxImports } from '@lore/ui/helm/checkbox';
@@ -32,6 +34,7 @@ import { LoreLink } from '@lore/ui/link';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
+    NgIcon,
     LoreButton,
     LoreBadge,
     LoreChip,
@@ -54,6 +57,7 @@ import { LoreLink } from '@lore/ui/link';
     HlmTabsImports,
     HlmTooltipImports,
   ],
+  providers: [provideIcons({ lucideInbox })],
   template: `
     <!-- Cards: .lore-card is the raised surface; data-color adds the top accent. -->
     <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -104,6 +108,30 @@ import { LoreLink } from '@lore/ui/link';
         <button loreChip color="primary" [suggested]="true">✨ golden hour</button>
         <button loreChip color="primary" [suggested]="true">✨ coastline</button>
         <button loreChip color="danger">needs review</button>
+      </div>
+
+      <h2 class="mt-8 mb-4 text-sm font-medium text-muted-foreground">
+        Compact badge (size="sm") — a count over an icon, always solid
+      </h2>
+      <div class="flex flex-wrap items-center gap-2">
+        @for (color of countColors; track color) {
+          @for (count of counts; track count) {
+            <span loreBadge size="sm" variant="solid" [color]="color">{{ count }}</span>
+          }
+        }
+        <span class="relative ms-4 inline-flex" role="img" aria-label="Review queue, 3 waiting">
+          <ng-icon name="lucideInbox" size="16px" aria-hidden="true" />
+          <span
+            loreBadge
+            size="sm"
+            variant="solid"
+            color="danger"
+            class="absolute -end-2 -top-2"
+            aria-hidden="true"
+          >
+            3
+          </span>
+        </span>
       </div>
 
       <h2 class="mt-8 mb-4 text-sm font-medium text-muted-foreground">
@@ -387,6 +415,8 @@ import { LoreLink } from '@lore/ui/link';
 export class UiProof {
   protected readonly variants: LoreVariant[] = ['solid', 'soft', 'outlined', 'plain'];
   protected readonly colors: LoreColor[] = ['primary', 'neutral', 'danger', 'success', 'warning'];
+  protected readonly countColors: LoreColor[] = ['danger', 'neutral'];
+  protected readonly counts = ['7', '42', '999'];
 
   protected readonly progress = signal(62);
 
