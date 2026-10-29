@@ -390,11 +390,24 @@
    action on a screen read as the brand rather than as a blue rectangle.
    Every other colour leaves them unset and paints flat --vc. Both stops of
    each gradient are measured under --vc-on (the violet primitives above).
+   They are registered non-inheriting, so "unset" holds for a control nested
+   in a primary one: inherited, the active rail link's gradient painted over a
+   dark danger count badge, white on primary-400 / violet-400 at 2.71 / 2.80:1.
+   No initial value, so var()'s fallback still decides what unset paints.
 
    --ctl-shade is the bottom-edge darkening every solid fill takes, and
    --ctl-highlight the 1px top bevel. Both are measured where they bind: the
    shade at full strength, the gradient's last pixel, under each --vc-on —
    the lowest is warning's deep ink on shaded warning-500, 5.64:1. */
+
+@property --vc-gradient {
+  syntax: '*';
+  inherits: false;
+}
+@property --vc-gradient-strong {
+  syntax: '*';
+  inherits: false;
+}
 
 :root {
   --ctl-shade: color-mix(in oklab, var(--gray-950) 10%, transparent);

@@ -275,8 +275,11 @@
 
   /* A pseudo, not a border-top: a coloured top border meets the grey side
      borders at a mitred corner, and the pseudo can take a gradient. Its top
-     corners follow the card's own radius by inheriting the two longhands. */
+     corners follow the card's own radius by inheriting the two longhands, and
+     it inherits the card's gradient by name, since that channel does not
+     inherit on its own (tokens.css). */
   .lore-card[data-color]::before {
+    --vc-gradient: inherit;
     content: '';
     position: absolute;
     inset-inline: -1px;
