@@ -396,9 +396,10 @@
    No initial value, so var()'s fallback still decides what unset paints.
 
    --ctl-shade is the bottom-edge darkening every solid fill takes, and
-   --ctl-highlight the 1px top bevel. Both are measured where they bind: the
-   shade at full strength, the gradient's last pixel, under each --vc-on —
-   the lowest is warning's deep ink on shaded warning-500, 5.64:1. */
+   --ctl-highlight the 1px top bevel. Every solid fill is measured top to
+   shaded bottom, at rest and on hover, under its --vc-on: a deep-ink fill binds
+   at the shaded bottom (lowest: warning at rest, 5.64:1), a white-ink fill at
+   the unshaded top (lowest: dark danger at rest, 4.57:1). */
 
 @property --vc-gradient {
   syntax: '*';
@@ -441,9 +442,12 @@
   --vc-soft-fg: var(--success-700);
   --vc-on: white;
 }
+/* A deep-ink fill, so the hover step goes LIGHTER, as dark warning's does: ink
+   on warning-600 measured 4.60:1 at the top and 3.89:1 shaded. On warning-500
+   6.80 / 5.64:1; on warning-400 (hover) 8.81 / 7.23:1. */
 [data-color='warning'] {
   --vc: var(--warning-500);
-  --vc-strong: var(--warning-600);
+  --vc-strong: var(--warning-400);
   --vc-soft-fg: var(--warning-700);
   --vc-on: oklch(0.22 0.03 75);
 }

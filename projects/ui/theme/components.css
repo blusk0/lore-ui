@@ -106,7 +106,7 @@
      rectangle. The image layers are the shade over --vc-gradient, which only
      primary sets (tokens.css, tier 3); everywhere else it is `none` and the
      flat --vc colour under it shows through. Ratios for every --vc-on are
-     measured at the shade's darkest pixel (tokens.css). */
+     measured top to shaded bottom, at rest and on hover (tokens.css). */
   .lore-ctl[data-variant='solid'] {
     background-color: var(--vc);
     background-image:
