@@ -72,10 +72,11 @@ export class HlmCheckbox implements ControlValueAccessor {
   protected readonly _computedClass = computed(() =>
     hlm(
       // lore restyle: the glyph stays 16px, but a `before:` pseudo expands the
-      // POINTER TARGET to 24×24 (16 + 4px bleed each side) — WCAG 2.2 2.5.8
-      // minimum, held even in compact density (the ruling from 120's open
-      // question 4; see ui/helm/README.md). Transition rides --motion-fast.
-      'border-input dark:bg-input/30 data-checked:bg-primary data-checked:text-primary-foreground dark:data-checked:bg-primary data-checked:border-primary data-[matches-spartan-invalid=true]:aria-checked:border-primary data-[matches-spartan-invalid=true]:border-destructive dark:data-[matches-spartan-invalid=true]:border-destructive/50 focus-visible:border-ring focus-visible:ring-ring/50 data-[matches-spartan-invalid=true]:ring-destructive/20 dark:data-[matches-spartan-invalid=true]:ring-destructive/40 relative flex size-4 items-center justify-center rounded-[4px] border transition-colors duration-(--motion-fast) group-has-disabled/field:opacity-50 focus-visible:ring-3 data-[matches-spartan-invalid=true]:ring-3 peer shrink-0 cursor-default outline-none disabled:cursor-not-allowed disabled:opacity-50 before:absolute before:-inset-1 before:content-[""]',
+      // POINTER TARGET to 24×24 — WCAG 2.2 2.5.8 minimum, held even in compact
+      // density (120's open question 4; see ui/helm/README.md). Its inset is
+      // measured from the padding box, so the bleed is 4px plus the 1px border.
+      // Transition rides --motion-fast.
+      'border-input dark:bg-input/30 data-checked:bg-primary data-checked:text-primary-foreground dark:data-checked:bg-primary data-checked:border-primary data-[matches-spartan-invalid=true]:aria-checked:border-primary data-[matches-spartan-invalid=true]:border-destructive dark:data-[matches-spartan-invalid=true]:border-destructive/50 focus-visible:border-ring focus-visible:ring-ring/50 data-[matches-spartan-invalid=true]:ring-destructive/20 dark:data-[matches-spartan-invalid=true]:ring-destructive/40 relative flex size-4 items-center justify-center rounded-[4px] border transition-colors duration-(--motion-fast) group-has-disabled/field:opacity-50 focus-visible:ring-3 data-[matches-spartan-invalid=true]:ring-3 peer shrink-0 cursor-default outline-none disabled:cursor-not-allowed disabled:opacity-50 before:absolute before:-inset-[5px] before:content-[""]',
       this.userClass(),
       this._errorStateClass(),
     ),
