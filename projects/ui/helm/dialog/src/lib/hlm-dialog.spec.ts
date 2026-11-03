@@ -1,4 +1,4 @@
-import { Component, provideZonelessChangeDetection } from '@angular/core';
+import { Component, inject, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LoreButton } from '@lore/ui/button';
 import {
@@ -6,7 +6,7 @@ import {
   expectOnlyTokenColoursIn,
   overlayContainer,
 } from '@lore/ui/testing';
-import { HlmDialogImports } from '../index';
+import { HlmDialogImports, HlmDialogService } from '../index';
 import { hlmDialogOverlayClass } from './hlm-dialog-overlay';
 
 // Composed exactly as app code will: a lore-owned trigger button, the portal,
@@ -97,5 +97,102 @@ describe('HlmDialog', () => {
     await fixture.whenStable();
 
     expect(overlayContainer().querySelector('[role="dialog"]')).toBeNull();
+  });
+});
+
+const VIEWPORT_W = 'w-[calc(100vw-2rem)]';
+const VIEWPORT_MAX_W = 'max-w-[calc(100vw-2rem)]';
+
+@Component({
+  imports: [HlmDialogImports, LoreButton],
+  template: `
+    <hlm-dialog>
+      <button hlmDialogTrigger loreBtn data-testid="wider">Wider</button>
+      <hlm-dialog-content *hlmDialogPortal class="sm:max-w-md">
+        <h3 hlmDialogTitle>Approve?</h3>
+      </hlm-dialog-content>
+    </hlm-dialog>
+    <hlm-dialog>
+      <button hlmDialogTrigger loreBtn data-testid="fixed">Fixed</button>
+      <hlm-dialog-content *hlmDialogPortal class="w-[600px] sm:max-w-none">
+        <h3 hlmDialogTitle>Wide</h3>
+      </hlm-dialog-content>
+    </hlm-dialog>
+  `,
+})
+class SizedHost {
+  readonly service = inject(HlmDialogService);
+}
+
+@Component({
+  imports: [HlmDialogImports],
+  template: `<h3 hlmDialogTitle>From the service</h3>`,
+})
+class ServiceBody {}
+
+// jsdom has no layout: these pin the class contract that gives the width; only a browser measures it.
+describe('HlmDialogContent width', () => {
+  async function setup() {
+    await TestBed.configureTestingModule({
+      imports: [SizedHost],
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(SizedHost);
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    const openBy = async (id: string) => {
+      root.querySelector<HTMLElement>(`[data-testid="${id}"]`)!.click();
+      await fixture.whenStable();
+      return [...overlayContainer().querySelector('hlm-dialog-content')!.classList];
+    };
+    return { fixture, openBy };
+  }
+
+  afterEach(() => {
+    document.querySelector('.cdk-overlay-container')?.remove();
+  });
+
+  it('fills its max width from the viewport, not from a pane that shrinks to fit', async () => {
+    await TestBed.configureTestingModule({
+      imports: [Host],
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(Host);
+    await fixture.whenStable();
+    (fixture.nativeElement as HTMLElement).querySelector('button')!.click();
+    await fixture.whenStable();
+    const classes = [...overlayContainer().querySelector('hlm-dialog-content')!.classList];
+
+    expect(classes).toEqual(expect.arrayContaining([VIEWPORT_W, VIEWPORT_MAX_W, 'sm:max-w-sm']));
+    // A percentage resolves against the CDK pane, which is as wide as the content.
+    expect(classes).not.toContain('w-full');
+    expect(classes.some((c) => c.includes('100%'))).toBe(false);
+  });
+
+  it("lets the caller's sm:max-w-* replace the default cap and keep the viewport width", async () => {
+    const { openBy } = await setup();
+    const classes = await openBy('wider');
+
+    expect(classes).toEqual(expect.arrayContaining(['sm:max-w-md', VIEWPORT_W, VIEWPORT_MAX_W]));
+    expect(classes).not.toContain('sm:max-w-sm');
+  });
+
+  it("lets the caller's own width replace the viewport width", async () => {
+    const { openBy } = await setup();
+    const classes = await openBy('fixed');
+
+    expect(classes).toEqual(expect.arrayContaining(['w-[600px]', 'sm:max-w-none']));
+    expect(classes).not.toContain(VIEWPORT_W);
+    expect(classes).not.toContain('sm:max-w-sm');
+  });
+
+  it("merges HlmDialogService's contentClass the same way", async () => {
+    const { fixture } = await setup();
+    fixture.componentInstance.service.open(ServiceBody, { contentClass: 'sm:max-w-lg' });
+    await fixture.whenStable();
+    const classes = [...overlayContainer().querySelector('hlm-dialog-content')!.classList];
+
+    expect(classes).toEqual(expect.arrayContaining(['sm:max-w-lg', VIEWPORT_W]));
+    expect(classes).not.toContain('sm:max-w-sm');
   });
 });
