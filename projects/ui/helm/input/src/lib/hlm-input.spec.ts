@@ -101,7 +101,7 @@ describe('HlmInput', () => {
 
     expect(at('multiline').tagName).toBe('TEXTAREA');
     expect([...at('multiline').classList]).toEqual(
-      expect.arrayContaining(['lore-ctl', 'h-auto', 'min-h-16', 'resize-y']),
+      expect.arrayContaining(['lore-ctl', 'h-auto', 'field-sizing-content', 'resize-y']),
     );
     // The single-line control must NOT pick the textarea metrics up.
     expect([...at('text').classList]).not.toContain('h-auto');
@@ -464,7 +464,7 @@ describe('HlmInput on a file input', () => {
     expect((at('file-off') as HTMLInputElement).disabled).toBe(true);
   });
 
-  it('leaves the text input, textarea and select class for class as they were at 0.7.0', async () => {
+  it('leaves the text input and select class for class as at 0.7.0, the textarea as at 0.9.4', async () => {
     const { classesOf } = await setupFile();
     const shared =
       'block w-full text-start font-normal disabled:cursor-not-allowed border-input ' +
@@ -474,12 +474,96 @@ describe('HlmInput on a file input', () => {
 
     expect(classesOf('text').sort()).toEqual(sorted(`${shared} cursor-text select-text`));
     expect(classesOf('multiline').sort()).toEqual(
-      sorted(`${shared} cursor-text select-text h-auto min-h-16 resize-y py-2 whitespace-pre-wrap`),
+      sorted(
+        `${shared} cursor-text select-text h-auto field-sizing-content resize-y py-2 whitespace-pre-wrap ` +
+          `${GROW_MIN} ${GROW_MAX}`,
+      ),
     );
     expect(classesOf('picker').sort()).toEqual(sorted(`${shared} cursor-pointer select-none`));
     // None of them picks up the file button's rules.
     for (const id of ['text', 'multiline', 'picker']) {
       expect(classesOf(id).some((c) => c.includes('file:'))).toBe(false);
+    }
+  });
+});
+
+const GROW_MIN = 'min-h-[max(4rem,calc(var(--textarea-rows,2)*1lh+var(--spacing)*4+2px))]';
+const GROW_MAX = 'max-h-[calc(12lh+var(--spacing)*4+2px)]';
+
+/** A textarea grows with its text between a `rows` floor and a 12-line cap; jsdom has no layout, so this pins the contract. */
+@Component({
+  imports: [HlmInput],
+  template: `
+    <textarea hlmInput data-testid="rows" rows="3" aria-label="Notes"></textarea>
+    <textarea hlmInput data-testid="no-rows" aria-label="Reason"></textarea>
+    <textarea
+      hlmInput
+      data-testid="taller"
+      rows="2"
+      class="min-h-32 max-h-40"
+      aria-label="Method"
+    ></textarea>
+    <input hlmInput data-testid="line" aria-label="Code" />
+    <select hlmInput data-testid="picker" aria-label="Unit"><option>Each</option></select>
+  `,
+})
+class GrowHost {}
+
+describe('HlmInput on a textarea, growing with its content', () => {
+  async function setupGrow() {
+    await TestBed.configureTestingModule({
+      imports: [GrowHost],
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GrowHost);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    return {
+      at: (id: string) => el.querySelector<HTMLElement>(`[data-testid="${id}"]`)!,
+      classesOf: (id: string) => [...el.querySelector(`[data-testid="${id}"]`)!.classList],
+    };
+  }
+
+  it('sizes to its content between a rows floor and a 12-line cap, keeping the drag handle', async () => {
+    const { classesOf } = await setupGrow();
+
+    expect(classesOf('rows')).toEqual(
+      expect.arrayContaining(['field-sizing-content', 'h-auto', 'resize-y', GROW_MIN, GROW_MAX]),
+    );
+    // Padding, radius, focus ring and density stay on .lore-ctl and py-2.
+    expect(classesOf('rows')).toEqual(expect.arrayContaining(['lore-ctl', 'py-2']));
+  });
+
+  it('carries its rows attribute into the min height, since field-sizing ignores rows', async () => {
+    const { at } = await setupGrow();
+
+    expect(at('rows').style.getPropertyValue('--textarea-rows')).toBe('3');
+    expect(at('rows').getAttribute('rows')).toBe('3');
+    // No rows attribute: the class falls back to the HTML default of 2.
+    expect(at('no-rows').style.getPropertyValue('--textarea-rows')).toBe('');
+  });
+
+  it("lets the caller's min-h and max-h win over the growth bounds", async () => {
+    const { classesOf } = await setupGrow();
+    const classes = classesOf('taller');
+
+    expect(classes).toEqual(
+      expect.arrayContaining(['min-h-32', 'max-h-40', 'field-sizing-content']),
+    );
+    expect(classes).not.toContain(GROW_MIN);
+    expect(classes).not.toContain(GROW_MAX);
+  });
+
+  it('leaves the single-line input and the select fixed-size', async () => {
+    const { at, classesOf } = await setupGrow();
+
+    for (const id of ['line', 'picker']) {
+      const classes = classesOf(id);
+      expect(classes.some((c) => c.startsWith('field-sizing'))).toBe(false);
+      expect(classes.some((c) => c.startsWith('min-h-') || c.startsWith('max-h-'))).toBe(false);
+      expect(classes).not.toContain('resize-y');
+      expect(at(id).style.getPropertyValue('--textarea-rows')).toBe('');
     }
   });
 });

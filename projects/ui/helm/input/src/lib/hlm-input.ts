@@ -5,9 +5,11 @@ import {
   computed,
   Directive,
   ElementRef,
+  HostAttributeToken,
   inject,
   input,
   Renderer2,
+  RendererStyleFlags2,
 } from '@angular/core';
 import { BrnFieldControl, BrnFieldControlDescribedBy } from '@spartan-ng/brain/field';
 import { BrnInput } from '@spartan-ng/brain/input';
@@ -84,6 +86,11 @@ export class HlmInput {
   constructor() {
     const renderer = inject(Renderer2);
     const host = inject(ElementRef<HTMLElement>).nativeElement;
+    // `field-sizing: content` ignores `rows`, so the min height reads it from a variable.
+    const rows = inject(new HostAttributeToken('rows'), { optional: true });
+    if (this._isTextarea && rows) {
+      renderer.setStyle(host, '--textarea-rows', rows, RendererStyleFlags2.DashCase);
+    }
     afterRenderEffect({
       write: () => {
         // Tracked so brain's own rewrite of the attribute re-triggers this one.
@@ -121,7 +128,14 @@ export class HlmInput {
       // the obvious adjective above is what stopped this block from shipping a
       // stray `visibility` rule nothing renders.
       'aria-[invalid=true]:border-destructive',
-      this._isTextarea ? 'h-auto min-h-16 resize-y py-2 whitespace-pre-wrap' : '',
+      // A textarea grows with its text (`field-sizing`), from at least its `rows`
+      // (never under 4rem) to 12 lines, then scrolls. Where `field-sizing` is
+      // unsupported, `h-auto` keeps the `rows` height and `resize-y` the drag handle.
+      this._isTextarea
+        ? 'h-auto field-sizing-content resize-y py-2 whitespace-pre-wrap ' +
+          'min-h-[max(4rem,calc(var(--textarea-rows,2)*1lh+var(--spacing)*4+2px))] ' +
+          'max-h-[calc(12lh+var(--spacing)*4+2px)]'
+        : '',
       // The browser's file button becomes an sm-height key inset in the
       // control: the block padding centres it at either density (md less sm,
       // less the 1px hairline, halved). Secondary pair at rest, accent on hover.
