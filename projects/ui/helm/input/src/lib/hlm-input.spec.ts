@@ -3,6 +3,8 @@ import { TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HlmFieldImports } from '@lore/ui/helm/field';
 import { expectOnlyTokenColours } from '@lore/ui/testing';
+// @ts-expect-error the builder's text loader yields the sheet as a string; there is no type for it.
+import componentsCss from '../../../../theme/components.css' with { loader: 'text' };
 import { HlmInput } from './hlm-input';
 
 @Component({
@@ -564,6 +566,31 @@ describe('HlmInput on a textarea, growing with its content', () => {
       expect(classes.some((c) => c.startsWith('min-h-') || c.startsWith('max-h-'))).toBe(false);
       expect(classes).not.toContain('resize-y');
       expect(at(id).style.getPropertyValue('--textarea-rows')).toBe('');
+    }
+  });
+});
+
+describe('HlmInput under the pointer', () => {
+  // Every selector in theme/components.css that moves an element while :active.
+  const pressSelectors = [
+    ...(componentsCss as string).matchAll(/([^{}]*:active[^{}]*)\{([^{}]*)\}/g),
+  ]
+    .filter(([, , body]) => /\btranslate\s*:/.test(body))
+    .map(([, selector]) => selector.replace(/\/\*[\s\S]*?\*\//g, '').trim());
+
+  it('never moves a field while the mouse is held on it, though a button still presses', async () => {
+    const { el, at } = await setup();
+    const button = document.createElement('button');
+    button.className = 'lore-ctl';
+    el.append(button);
+    // :active is stripped so jsdom can answer "would this rule reach the element?".
+    const reaches = (node: Element) =>
+      pressSelectors.some((selector) => node.matches(selector.replaceAll(':active', '')));
+
+    expect(pressSelectors.length).toBeGreaterThan(0);
+    expect(reaches(button)).toBe(true);
+    for (const id of ['text', 'multiline', 'picker', 'bare']) {
+      expect(reaches(at(id))).toBe(false);
     }
   });
 });
