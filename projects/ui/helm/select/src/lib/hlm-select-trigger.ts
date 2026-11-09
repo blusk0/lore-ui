@@ -27,6 +27,7 @@ import type { ClassValue } from 'clsx';
       [class]="_computedClass()"
       [attr.data-size]="size()"
       data-slot="select-trigger"
+      data-field
     >
       <ng-content />
       <ng-icon

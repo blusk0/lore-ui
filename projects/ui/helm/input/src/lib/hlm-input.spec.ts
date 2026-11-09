@@ -593,4 +593,22 @@ describe('HlmInput under the pointer', () => {
       expect(reaches(at(id))).toBe(false);
     }
   });
+
+  it('leaves a button marked data-field still, and still presses an unmarked one', async () => {
+    const { el } = await setup();
+    const reaches = (node: Element) =>
+      pressSelectors.some((selector) => node.matches(selector.replaceAll(':active', '')));
+    const make = (marked: boolean) => {
+      const button = document.createElement('button');
+      button.className = 'lore-ctl';
+      if (marked) {
+        button.setAttribute('data-field', '');
+      }
+      el.append(button);
+      return button;
+    };
+
+    expect(reaches(make(true))).toBe(false);
+    expect(reaches(make(false))).toBe(true);
+  });
 });

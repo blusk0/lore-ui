@@ -55,6 +55,12 @@ styled layer. Plan: `plans/120-design-system-components.md` (D2/D3).
   `data-variant`/`data-color`/`data-size` styled in `theme/components.css`.
   *Structural/behavioral* helm (dialog frames, menu panels, tables) keeps the
   cva + `hlm()`/`classes()` + Tailwind idiom in these owned files.
+- **A field never moves when pressed.** `.lore-ctl:active` translates a control half a
+  pixel, except on `input`, `textarea`, `select` and any element carrying the bare
+  **`data-field`** attribute (`theme/components.css`). A `<button>` drawn as a field puts
+  `data-field` on itself: the date picker and select triggers do, and an app-local
+  field-styled trigger (lore-inventory's `HlmUnitSelect`) opts in the same way:
+  `<button class="lore-ctl" data-field>`. Presence is the switch; the value is ignored.
 - **`HlmTextarea` (`hlmTextarea`) is deprecated.** App code writes `<textarea hlmInput>`
   (`@lore/ui/helm/input`), which sits on `.lore-ctl` like every other control. The
   directive stays because `HlmInputGroupTextarea` hosts it and apps still import it;

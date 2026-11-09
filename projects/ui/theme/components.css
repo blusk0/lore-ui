@@ -37,8 +37,10 @@
   /* A press that moves: half a pixel down while the pointer is held. Small
      enough never to shift a neighbour, large enough to feel like a key.
      Never on a field: :active lasts as long as the mouse is down in one, so
-     clicking or selecting text in it would make it move. */
-  .lore-ctl:active:not(:disabled, [data-disabled='true'], input, textarea, select) {
+     clicking or selecting text in it would make it move. A <button> drawn as
+     a field (a date or select trigger) opts out with the bare `data-field`
+     attribute: <button class="lore-ctl" data-field>. */
+  .lore-ctl:active:not(:disabled, [data-disabled='true'], input, textarea, select, [data-field]) {
     translate: 0 0.5px;
   }
 

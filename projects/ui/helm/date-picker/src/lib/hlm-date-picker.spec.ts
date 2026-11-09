@@ -199,6 +199,15 @@ describe('HlmDatePicker', () => {
     expect(trigger().textContent).toContain('Pick a date');
   });
 
+  it('marks its trigger as a field, so the .lore-ctl press never moves it', async () => {
+    const { trigger } = await setup();
+
+    // theme/components.css excludes [data-field] from the :active translate;
+    // hlm-input.spec.ts pins that half of the contract.
+    expect(trigger().classList).toContain('lore-ctl');
+    expect(trigger().hasAttribute('data-field')).toBe(true);
+  });
+
   it('opens a named panel holding a grid for the month on show', async () => {
     const { open, panel, grid, header, days } = await setup('2026-08-03');
     await open();

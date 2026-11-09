@@ -271,6 +271,7 @@ function triggerFormatter(locale: string): Intl.DateTimeFormat {
         brnPopoverTrigger
         brnFieldControlDescribedBy
         data-slot="date-picker-trigger"
+        data-field
         [id]="triggerId"
         [class]="_triggerClass()"
         [disabled]="disabled()"
