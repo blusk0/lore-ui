@@ -89,6 +89,10 @@ Built on `@spartan-ng/brain/accordion`. Brain refuses a trigger whose parent is 
 - A closed panel stays mounted (brain sets `inert`, the helm clamps it to zero height),
   so its children keep their state and data reads.
 - The trigger draws its own chevron and is not a `.lore-ctl`, so it never takes the press.
+- Its hover is the plain neutral button's fill (`data-color="neutral"` on the trigger,
+  `enabled:hover:bg-(--vc)/10`, `rounded-md`), and nothing stays filled while open. Inline
+  padding of `calc(var(--space) * 2)` is pulled back by an equal negative margin, so the
+  label lines up with the panel's text. The panel takes no inline padding.
 
 ## Version note (spartan 1.1)
 
