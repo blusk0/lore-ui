@@ -218,8 +218,8 @@ describe('HlmAccordion', () => {
     expect(at('cost-trigger').classList).toContain('group/accordion-trigger');
     expect(icon.classList).toContain('group-data-[state=open]/accordion-trigger:rotate-180');
 
-    // Nothing animates outside motion-safe: the panel height and the chevron both.
-    for (const node of [icon, at('cost-content')]) {
+    // Nothing animates outside motion-safe: the hover fill, the panel height and the chevron.
+    for (const node of [at('cost-trigger'), icon, at('cost-content')]) {
       const transitions = [...node.classList].filter((c) => c.includes('transition'));
       expect(transitions.length).toBeGreaterThan(0);
       expect(transitions.every((c) => c.startsWith('motion-safe:'))).toBe(true);
@@ -227,7 +227,7 @@ describe('HlmAccordion', () => {
     expect(at('cost-content').classList).toContain('h-(--brn-accordion-content-height)');
   });
 
-  it('is a pointer row that the .lore-ctl press never reaches', async () => {
+  it("is a pointer row that the .lore-ctl press never reaches, hovered with the plain button's fill", async () => {
     const { at } = await setup();
     const trigger = at('cost-trigger');
     const pressSelectors = [
@@ -240,18 +240,32 @@ describe('HlmAccordion', () => {
     expect(pressSelectors.some((s) => trigger.matches(s.replaceAll(':active', '')))).toBe(false);
     const classes = [...trigger.classList];
     expect(classes).toEqual(
-      expect.arrayContaining(['cursor-pointer', 'w-full', 'hover:underline']),
+      expect.arrayContaining([
+        'cursor-pointer',
+        'flex-1',
+        'rounded-md',
+        'enabled:hover:bg-(--vc)/10',
+      ]),
     );
+    // The neutral channel the plain .lore-ctl hover reads, not a primary tint.
+    expect(trigger.getAttribute('data-color')).toBe('neutral');
     expect(classes).not.toContain('lore-ctl');
     expect(classes.some((c) => c.includes('translate'))).toBe(false);
+    expect(classes.some((c) => c.includes('underline'))).toBe(false);
+    // Hover only: nothing keys a fill off the open state.
+    expect(classes.some((c) => /(data-open|state=open|aria-expanded).*:bg-/.test(c))).toBe(false);
   });
 
-  it("lines the panel's text up with the trigger's: neither pads the inline axis", async () => {
+  it("lines the panel's text up with the trigger's: the trigger's padding is pulled back by its margin", async () => {
     const { at } = await setup();
     const inline = (node: Element) =>
       [...node.classList].filter((c) => /^(p[xsel]|ps|pe)-/.test(c) || /^-?m[xsel]-/.test(c));
 
-    expect(inline(at('cost-trigger'))).toEqual([]);
+    // The fill's inset, then the same length taken back, so the label starts where the panel does.
+    expect(inline(at('cost-trigger')).sort()).toEqual([
+      '-mx-[calc(var(--space)*2)]',
+      'px-[calc(var(--space)*2)]',
+    ]);
     expect(inline(at('cost-content'))).toEqual([]);
     expect(inline(at('cost-content').firstElementChild!)).toEqual([]);
     expect(at('cost-content').firstElementChild!.classList).toContain('pb-[calc(var(--space)*4)]');

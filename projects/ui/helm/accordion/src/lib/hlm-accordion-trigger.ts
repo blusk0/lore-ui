@@ -5,8 +5,9 @@ import { BrnAccordionTrigger } from '@spartan-ng/brain/accordion';
 import { classes } from '@lore/ui/helm/utils';
 
 /**
- * A full-width row and never a `.lore-ctl`, so the press does not move it. Its text
- * starts at the panel's left edge; focus is drawn as `.lore-ctl` draws it.
+ * A full-width row and never a `.lore-ctl`, so the press does not move it. Hover is the
+ * plain neutral button's fill; its side padding is taken back by an equal negative
+ * margin, so the label starts at the panel's left edge. Focus is drawn as `.lore-ctl` draws it.
  */
 @Component({
   selector: 'button[hlmAccordionTrigger]',
@@ -14,7 +15,7 @@ import { classes } from '@lore/ui/helm/utils';
   providers: [provideIcons({ lucideChevronDown })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [BrnAccordionTrigger],
-  host: { 'data-slot': 'accordion-trigger' },
+  host: { 'data-slot': 'accordion-trigger', 'data-color': 'neutral' },
   template: `
     <span class="min-w-0 flex-1"><ng-content /></span>
     <ng-icon
@@ -27,11 +28,13 @@ import { classes } from '@lore/ui/helm/utils';
 export class HlmAccordionTrigger {
   constructor() {
     classes(() => [
-      'group/accordion-trigger flex w-full items-center justify-between gap-[calc(var(--space)*4)] py-[calc(var(--space)*4)]',
+      'group/accordion-trigger flex flex-1 items-center justify-between gap-[calc(var(--space)*4)] py-[calc(var(--space)*4)]',
+      '-mx-[calc(var(--space)*2)] px-[calc(var(--space)*2)]',
       'text-foreground text-start text-(length:--text-ui-md) font-medium',
-      'cursor-pointer select-none rounded-sm underline-offset-4 hover:underline',
+      'cursor-pointer select-none rounded-md enabled:hover:bg-(--vc)/10',
+      'duration-(--motion-fast) ease-(--ease) motion-safe:transition-colors',
       'focus-visible:outline-ring focus-visible:outline-2 focus-visible:outline-offset-2',
-      'disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50',
+      'disabled:cursor-not-allowed disabled:opacity-50',
     ]);
   }
 }
