@@ -22,7 +22,7 @@ identities: TS2345 / NG3004 / NG0203); the tarball is the fix, not an inconvenie
   Consumers import these by path (`@lore/ui/theme/tokens.css`); the entry sheet `index.css`
   stays **per-app** because it carries the sanctioned per-app divergences (inventory keys dark
   off `.dark`, dam off `html.dark`).
-- `projects/ui/helm/<primitive>/` — 26 Spartan helm secondary entries (`@lore/ui/helm/<x>`),
+- `projects/ui/helm/<primitive>/` — 27 Spartan helm secondary entries (`@lore/ui/helm/<x>`),
   generated-then-owned, built against `@spartan-ng/brain` 1.3. Regeneration:
   `ng g @spartan-ng/cli:ui <primitive>` guided by `components.json` here (the apps no longer
   have one). `projects/ui/helm/README.md` carries the restyle checklist.

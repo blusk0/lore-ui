@@ -69,6 +69,27 @@ styled layer. Plan: `plans/120-design-system-components.md` (D2/D3).
   dependency of `command`) needs it. App code uses `loreBtn` — the `LoreButton`
   directive, which lives beside it in `@lore/ui/helm/button` — never `hlmBtn`.
 
+## Accordion (`@lore/ui/helm/accordion`)
+
+Built on `@spartan-ng/brain/accordion`. Brain refuses a trigger whose parent is not
+`h1`–`h6` (or `role="heading"` with `aria-level`), so the heading level is the caller's:
+
+```html
+<hlm-accordion type="multiple">
+  <hlm-accordion-item [isOpened]="historyOpen()" (openedChange)="historyOpen.set($event)">
+    <h2 hlmAccordionHeader><button hlmAccordionTrigger>History</button></h2>
+    <hlm-accordion-content>…</hlm-accordion-content>
+  </hlm-accordion-item>
+</hlm-accordion>
+```
+
+- `type` is brain's and defaults to `single`; pass `multiple` to keep several open.
+- `[isOpened]` is one-way. Bind `(openedChange)` back to the same state, or a later
+  `true` after the user closes the item changes nothing and so does not reopen it.
+- A closed panel stays mounted (brain sets `inert`, the helm clamps it to zero height),
+  so its children keep their state and data reads.
+- The trigger draws its own chevron and is not a `.lore-ctl`, so it never takes the press.
+
 ## Version note (spartan 1.1)
 
 Helm 1.1 no longer builds host classes with `[class]="hlm(...)"` + `computed()`. It uses
