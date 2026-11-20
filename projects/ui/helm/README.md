@@ -80,6 +80,8 @@ styled layer. Plan: `plans/120-design-system-components.md` (D2/D3).
   `--destructive-soft-fg` (`--destructive` on that wash is 3.94:1).
   A calendar day hovers `bg-muted` too, so only today takes `bg-accent`; a hovered
   today or chosen day keeps its own fill, because those rules are emitted later.
+  An outside-month day is quieter by colour alone (`text-muted-foreground`, 5.51 / 6.48:1
+  on the panel); only a disabled day is faded with `opacity-50`.
 
 ## Accordion (`@lore/ui/helm/accordion`)
 
