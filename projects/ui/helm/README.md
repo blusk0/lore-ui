@@ -94,6 +94,26 @@ Built on `@spartan-ng/brain/accordion`. Brain refuses a trigger whose parent is 
   padding of `calc(var(--space) * 2)` is pulled back by an equal negative margin, so the
   label lines up with the panel's text. The panel takes no inline padding.
 
+## Autocomplete (`@lore/ui/helm/autocomplete`)
+
+A free-text input with completions, where **the text is the value and the caller owns
+it**. Not `HlmCombobox`, which chooses one option and restores its label on Escape.
+
+- Built on CDK's `ActiveDescendantKeyManager` and brain's popover. Brain's
+  `BrnAutocompleteSearch` was rejected as the base: its input writes its own value, takes
+  a row by replacing the text with the label, and prevents the default action of every
+  Enter (brain 1.3.1).
+- It never writes the text. `(accept)` hands over the row, the caller splices, passes
+  `[text]` back and calls `setCaret(n)`, which focuses the input and places the caret
+  after that render.
+- The input is an `hlmInput`, so `hlm-field` labels it. Outside a field, use
+  `[inputId]` with `<label for>`, or `aria-label`.
+- Keys are consumed only while the listbox is on the page, and a consumed key is
+  default-prevented **and stopped**. That keeps a surrounding dialog open on the first
+  Escape, and the caller's `(keydown)` sees only keys the control did not take.
+- No exit animation. The overlay detaches on the next render, so a second Escape
+  reaches the dialog straight away.
+
 ## Version note (spartan 1.1)
 
 Helm 1.1 no longer builds host classes with `[class]="hlm(...)"` + `computed()`. It uses

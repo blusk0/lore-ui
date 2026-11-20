@@ -36,6 +36,61 @@ Import `HlmAccordionImports`. It is built on `@spartan-ng/brain/accordion`, whic
   destroyed, so its children keep their state and data reads while closed.
 - The trigger is not a `.lore-ctl`, so it never moves on press.
 
+## Autocomplete (`@lore/ui/helm/autocomplete`)
+
+Import `HlmAutocompleteImports`. `HlmAutocomplete` is a free-text input that offers
+completions for text **you** own: the control renders `[text]` and never changes it.
+
+```html
+<label hlmLabel [for]="textId">What do you want to do?</label>
+<hlm-autocomplete
+  #box
+  [inputId]="textId"
+  [text]="text()"
+  [options]="rows()"
+  [(open)]="listOpen"
+  [loading]="asking()"
+  listboxLabel="Unit suggestions"
+  (textChange)="text.set($event)"
+  (caretChange)="caret.set($event)"
+  (accept)="take($event, box)"
+  (keydown)="key($event)"
+/>
+```
+
+```ts
+take(option: AutocompleteOption, box: HlmAutocomplete) {
+  const next = before + option.value + after; // your splice
+  this.text.set(next);
+  box.setCaret(before.length + option.value.length);
+}
+```
+
+- **Inputs:** `text`, `options` (`{ value, label, detail? }[]`), `open` (two-way),
+  `loading` (`aria-busy` on the list), `listboxLabel` (default `Suggestions`), `acceptOnTab`
+  (default `true`), `disabled`, `inputId`, and `aria-label` for use outside a field.
+- **Outputs:** `textChange(string)`, `caretChange(number)`, `accept(option)`,
+  `openChange(boolean)`.
+- **`setCaret(position)`** focuses the input and places the caret once the current `text`
+  has rendered. It does not emit `caretChange`.
+- **Options render verbatim.** They are not sorted, de-duplicated or narrowed, and nothing
+  is matched against the text. Filtering is the server's job.
+- **The list shows** while `open` is `true` and there is at least one option. Opening it is
+  up to you. Escape and leaving the input set `open` to `false`.
+- **Keys, while the list shows:** ArrowDown/ArrowUp/Home/End move the highlight and wrap;
+  Enter takes the highlighted row; Tab takes the highlighted row, or the first if none is
+  highlighted (`acceptOnTab`); Escape closes the list. A key the control takes has its
+  default prevented and propagation stopped, so a dialog stays open on the first Escape and
+  your `(keydown)` never sees that key. Enter with nothing highlighted, every key while the
+  list is closed, and any key with a modifier pass through untouched.
+- **Nothing is highlighted until an arrow key is pressed**, and a new `options` array clears
+  the highlight. Pointer hover paints a row but does not highlight it, so Enter after typing
+  always reaches you.
+- **ARIA:** the input has `role="combobox"`, `aria-autocomplete="list"`, `aria-expanded`,
+  and `aria-controls` only while a listbox is on the page. `aria-activedescendant` points at
+  the highlighted row. The listbox is named by `listboxLabel`, and each row is
+  `role="option"`.
+
 ## Code scaffolding
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
