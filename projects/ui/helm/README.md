@@ -76,7 +76,10 @@ styled layer. Plan: `plans/120-design-system-components.md` (D2/D3).
   a resting pointer, so an `--accent` hover left two rows painted alike. `hover:` is
   emitted before `focus:` and `data-[highlighted]:`, so a row that is both paints
   `--accent`. `HlmSelectItem` and `HlmCommandItem` carry no hover fill at all. A
-  destructive menu item keeps its own wash on hover and focus.
+  destructive menu item keeps its own wash on hover and focus, inked with
+  `--destructive-soft-fg` (`--destructive` on that wash is 3.94:1).
+  A calendar day hovers `bg-muted` too, so only today takes `bg-accent`; a hovered
+  today or chosen day keeps its own fill, because those rules are emitted later.
 
 ## Accordion (`@lore/ui/helm/accordion`)
 
