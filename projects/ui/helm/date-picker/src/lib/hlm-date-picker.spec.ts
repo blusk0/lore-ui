@@ -391,6 +391,21 @@ describe('HlmDatePicker', () => {
     }
   });
 
+  it('quietens an outside-month day by colour alone, and only a disabled day by opacity', async () => {
+    const t = await setup('2026-10-15');
+    await t.open();
+    const outside = overlayContainer().querySelector<HTMLElement>(
+      '[role="gridcell"][data-outside]',
+    )!;
+    expect(outside).not.toBeNull();
+
+    // --muted-foreground at full strength is 5.51 / 6.48:1 on the panel; at half opacity 2.08 / 2.64.
+    const paints = (cell: HTMLElement, variant: string) =>
+      [...cell.classList].filter((c) => c.startsWith(variant)).map((c) => c.slice(variant.length));
+    expect(paints(outside, 'data-[outside]:')).toEqual(['text-muted-foreground']);
+    expect(paints(outside, 'data-disabled:').sort()).toEqual(['opacity-50', 'pointer-events-none']);
+  });
+
   it('paints only from the token layer', async () => {
     const { el, open, refuse } = await setup('2026-08-03');
     await refuse({ receivedOn: ['A receipt cannot be dated in the future.'] });

@@ -633,7 +633,8 @@ export class HlmDatePicker implements BrnLabelable {
       'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
       'data-[selected-single]:bg-primary data-[selected-single]:text-primary-foreground data-[selected-single]:hover:bg-primary',
       'data-[today]:bg-accent data-[today]:text-accent-foreground',
-      'data-[outside]:text-muted-foreground data-[outside]:opacity-50',
+      // Quieter by colour alone: --muted-foreground clears AA (5.01:1 at worst); faded to half it did not.
+      'data-[outside]:text-muted-foreground',
       'data-disabled:pointer-events-none data-disabled:opacity-50',
     ),
   );
