@@ -102,6 +102,20 @@ describe('HlmDropdownMenu', () => {
     expectOnlyTokenColours(destructive);
   });
 
+  it('inks the destructive item with --destructive-soft-fg on its red wash, hovered or focused', async () => {
+    const { menu } = await open();
+    const destructive = menu.querySelectorAll<HTMLElement>('[role="menuitem"]')[1];
+    const on = (variant: string) =>
+      [...destructive.classList]
+        .filter((c) => c.startsWith(`data-[variant=destructive]:${variant}:`))
+        .map((c) => c.slice(`data-[variant=destructive]:${variant}:`.length));
+
+    // --destructive on its own wash is 3.94:1 light; the soft ink is 7.06 / 6.03:1.
+    for (const state of ['hover', 'focus']) {
+      expect(on(state)).toEqual(['bg-destructive/10', 'text-(--destructive-soft-fg)']);
+    }
+  });
+
   // jsdom applies no :hover, so read what each state paints off the classes it would apply.
   const paints = (row: HTMLElement, variant: string) =>
     [...row.classList].filter((c) => c.startsWith(variant)).map((c) => c.slice(variant.length));

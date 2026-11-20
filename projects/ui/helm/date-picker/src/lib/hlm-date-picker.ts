@@ -625,7 +625,8 @@ export class HlmDatePicker implements BrnLabelable {
   protected readonly _dayClass = computed(() =>
     hlm(
       'flex size-8 shrink-0 cursor-default items-center justify-center rounded-md text-sm font-normal select-none',
-      'hover:bg-accent hover:text-accent-foreground',
+      // Hover is a neutral fill, so a hovered day never looks like today's --accent.
+      'hover:bg-muted',
       // Every one of these is an attribute brain writes as the grid's state
       // moves, so the ink tracks the state brain maintains rather than a second
       // copy of it kept here.

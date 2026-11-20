@@ -364,6 +364,33 @@ describe('HlmDatePicker', () => {
     expect(trigger().getAttribute('aria-invalid')).toBeNull();
   });
 
+  it('paints a hovered day with a neutral fill, so only today takes --accent', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-10T12:00:00Z') });
+    try {
+      const t = await setup('2026-10-15');
+      await t.open();
+      const [today, chosen, plain] = [t.day(10), t.day(15), t.day(20)];
+      expect(today.hasAttribute('data-today')).toBe(true);
+      expect(chosen.hasAttribute('data-selected-single')).toBe(true);
+
+      // jsdom applies no :hover, so read what each state paints off the classes it would apply.
+      const paints = (cell: HTMLElement, variant: string) =>
+        [...cell.classList]
+          .filter((c) => c.startsWith(variant))
+          .map((c) => c.slice(variant.length));
+      const todayFill = paints(today, 'data-[today]:');
+      expect(todayFill).toEqual(['bg-accent', 'text-accent-foreground']);
+      for (const cell of [today, chosen, plain]) {
+        expect(paints(cell, 'hover:')).toEqual(['bg-muted']);
+      }
+      expect(paints(plain, 'hover:').some((c) => todayFill.includes(c))).toBe(false);
+      // A hovered chosen day keeps its own fill.
+      expect(paints(chosen, 'data-[selected-single]:hover:')).toEqual(['bg-primary']);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('paints only from the token layer', async () => {
     const { el, open, refuse } = await setup('2026-08-03');
     await refuse({ receivedOn: ['A receipt cannot be dated in the future.'] });
