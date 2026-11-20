@@ -68,6 +68,15 @@ styled layer. Plan: `plans/120-design-system-components.md` (D2/D3).
 - **`HlmButton` (`hlmBtn`) is internal-only.** It exists because `input-group` (a
   dependency of `command`) needs it. App code uses `loreBtn` — the `LoreButton`
   directive, which lives beside it in `@lore/ui/helm/button` — never `hlmBtn`.
+- **Hover is never the keyboard's colour.** In a list or menu row (autocomplete,
+  combobox, the date picker's month and year lists, dropdown menu items) hover is
+  `hover:bg-muted` and keeps the panel's ink; only the keyboard's row
+  (`data-highlighted`, or `focus` in a menu) takes `bg-accent`. Brain and the menu's
+  focus-on-hover move the highlight to the row a pointer enters, but a key moves it off
+  a resting pointer, so an `--accent` hover left two rows painted alike. `hover:` is
+  emitted before `focus:` and `data-[highlighted]:`, so a row that is both paints
+  `--accent`. `HlmSelectItem` and `HlmCommandItem` carry no hover fill at all. A
+  destructive menu item keeps its own wash on hover and focus.
 
 ## Accordion (`@lore/ui/helm/accordion`)
 
