@@ -428,6 +428,32 @@ describe('HlmCombobox', () => {
     expect(box().value).toBe('Shea butter');
   });
 
+  it('paints the keyboard row with --accent and a row left under the pointer with a neutral fill', async () => {
+    const { box, press, options, fixture } = await setup();
+    await press('ArrowDown');
+
+    // brain highlights the row a pointer enters…
+    options()[2].dispatchEvent(new MouseEvent('mouseenter'));
+    await fixture.whenStable();
+    expect(options()[2].getAttribute('data-highlighted')).toBe('');
+
+    // …and a key then moves the highlight while the pointer stays on that row.
+    await press('ArrowUp');
+    const [, active, hovered] = options();
+    expect(active.getAttribute('data-highlighted')).toBe('');
+    expect(hovered.hasAttribute('data-highlighted')).toBe(false);
+    expect(box().getAttribute('aria-activedescendant')).toBe(active.id);
+
+    // jsdom applies no :hover, so read what each state paints off the classes it would apply.
+    const paints = (row: HTMLElement, variant: string) =>
+      [...row.classList].filter((c) => c.startsWith(variant)).map((c) => c.slice(variant.length));
+    const activeFill = paints(active, 'data-[highlighted]:');
+    const hoverFill = paints(hovered, 'hover:');
+    expect(activeFill).toEqual(['bg-accent', 'text-accent-foreground']);
+    expect(hoverFill).toEqual(['bg-muted']);
+    expect(hoverFill.some((c) => activeFill.includes(c))).toBe(false);
+  });
+
   it('paints only from the token layer, shut and open', async () => {
     const { el, press, refuse } = await setup();
     await refuse({ materialId: ['Select a material.'] });

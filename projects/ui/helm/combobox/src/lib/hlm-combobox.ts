@@ -439,9 +439,9 @@ export class HlmCombobox {
   protected readonly _itemClass = computed(() =>
     hlm(
       'relative flex w-full cursor-default items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm outline-hidden select-none',
-      // `data-highlighted` is what brain's key manager writes as the caret moves,
-      // so the keyboard caret and the pointer hover land on one treatment.
-      'hover:bg-accent hover:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground',
+      // brain highlights the row a pointer enters, but a key moves the highlight off a resting
+      // pointer, so hover is a neutral fill and only `data-highlighted` takes --accent.
+      'hover:bg-muted data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground',
       'data-disabled:pointer-events-none data-disabled:opacity-50',
     ),
   );

@@ -543,6 +543,35 @@ describe('HlmDatePicker', () => {
       expect(t.host.emitted()).toEqual([]);
     });
 
+    it('paints the keyboard row with --accent and a row left under the pointer with a neutral fill', async () => {
+      const t = await setup('2026-08-15');
+      await t.open();
+      const year = control('Year');
+      await pressKey(t, 'ArrowDown', year);
+
+      // brain highlights the row a pointer enters…
+      const row = (text: string) => options('Years').find((o) => o.textContent!.trim() === text)!;
+      row('2029').dispatchEvent(new MouseEvent('mouseenter'));
+      await t.fixture.whenStable();
+      expect(row('2029').getAttribute('data-highlighted')).toBe('');
+
+      // …and a key then moves the highlight while the pointer stays on that row.
+      await pressKey(t, 'ArrowDown', year);
+      const [hovered, active] = [row('2029'), row('2030')];
+      expect(active.getAttribute('data-highlighted')).toBe('');
+      expect(hovered.hasAttribute('data-highlighted')).toBe(false);
+      expect(year.getAttribute('aria-activedescendant')).toBe(active.id);
+
+      // jsdom applies no :hover, so read what each state paints off the classes it would apply.
+      const paints = (el: HTMLElement, variant: string) =>
+        [...el.classList].filter((c) => c.startsWith(variant)).map((c) => c.slice(variant.length));
+      const activeFill = paints(active, 'data-[highlighted]:');
+      const hoverFill = paints(hovered, 'hover:');
+      expect(activeFill).toEqual(['bg-accent', 'text-accent-foreground']);
+      expect(hoverFill).toEqual(['bg-muted']);
+      expect(hoverFill.some((c) => activeFill.includes(c))).toBe(false);
+    });
+
     it('paints only from the token layer and reports no axe violations, list open', async () => {
       const t = await setup('2026-08-03');
       await t.open();

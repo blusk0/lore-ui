@@ -27,13 +27,34 @@ import { HlmDropdownMenuImports } from '../index';
 })
 class Host {}
 
+// One of each item type, so the hover contract is held by every row a menu can hold.
+@Component({
+  imports: [HlmDropdownMenuImports, LoreButton],
+  template: `
+    <button [hlmDropdownMenuTrigger]="viewMenu" loreBtn variant="plain" size="icon-sm">
+      <span class="sr-only">View</span>
+    </button>
+
+    <ng-template #viewMenu>
+      <div hlmDropdownMenu>
+        <button hlmDropdownMenuItem>Refresh</button>
+        <button hlmDropdownMenuCheckbox>Show archived</button>
+        <div hlmDropdownMenuGroup>
+          <button hlmDropdownMenuRadio [checked]="true">Comfortable</button>
+        </div>
+      </div>
+    </ng-template>
+  `,
+})
+class EveryItemHost {}
+
 describe('HlmDropdownMenu', () => {
-  async function open() {
+  async function open(host: typeof Host | typeof EveryItemHost = Host) {
     await TestBed.configureTestingModule({
-      imports: [Host],
+      imports: [host],
       providers: [provideZonelessChangeDetection()],
     }).compileComponents();
-    const fixture = TestBed.createComponent(Host);
+    const fixture = TestBed.createComponent(host);
     await fixture.whenStable();
 
     const trigger = (fixture.nativeElement as HTMLElement).querySelector('button')!;
@@ -79,5 +100,49 @@ describe('HlmDropdownMenu', () => {
     expect(destructive.getAttribute('data-variant')).toBe('destructive');
     expect([...destructive.classList]).toContain('data-[variant=destructive]:text-destructive');
     expectOnlyTokenColours(destructive);
+  });
+
+  // jsdom applies no :hover, so read what each state paints off the classes it would apply.
+  const paints = (row: HTMLElement, variant: string) =>
+    [...row.classList].filter((c) => c.startsWith(variant)).map((c) => c.slice(variant.length));
+
+  it('moves focus to the row a pointer enters, and a key moves it off a resting pointer', async () => {
+    const { fixture, menu } = await open(EveryItemHost);
+    const [refresh, archived] = Array.from(menu.querySelectorAll<HTMLElement>('[data-slot]'));
+
+    refresh.dispatchEvent(new MouseEvent('mouseenter'));
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(refresh);
+
+    // CDK's key manager reads `keyCode`, which a browser sets and a bare jsdom event does not.
+    refresh.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', keyCode: 40, bubbles: true }),
+    );
+    await fixture.whenStable();
+    // The pointer is still on Refresh, so its hover must not paint what focus paints.
+    expect(document.activeElement).toBe(archived);
+    expect(paints(refresh, 'hover:')).toEqual(['bg-muted']);
+    expect(paints(archived, 'focus:')).toContain('bg-accent');
+  });
+
+  it('paints focus with --accent and hover with a different, neutral fill, on every item type', async () => {
+    const { menu } = await open(EveryItemHost);
+    const rows = Array.from(menu.querySelectorAll<HTMLElement>('[role^="menuitem"]'));
+    expect(rows.map((row) => row.getAttribute('role'))).toEqual([
+      'menuitem',
+      'menuitemcheckbox',
+      'menuitemradio',
+    ]);
+
+    for (const row of rows) {
+      const focusFill = paints(row, 'focus:');
+      const hoverFill = paints(row, 'hover:');
+      expect(focusFill).toEqual(expect.arrayContaining(['bg-accent', 'text-accent-foreground']));
+      expect(hoverFill).toEqual(['bg-muted']);
+      // Not even nested ink: nothing under a hovered row takes the accent pairing.
+      expect(
+        [...row.classList].filter((c) => /(^|:)hover:/.test(c) && c.includes('accent')),
+      ).toEqual([]);
+    }
   });
 });
