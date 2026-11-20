@@ -105,7 +105,8 @@ it**. Not `HlmCombobox`, which chooses one option and restores its label on Esca
   Enter (brain 1.3.1).
 - It never writes the text. `(accept)` hands over the row, the caller splices, passes
   `[text]` back and calls `setCaret(n)`, which focuses the input and places the caret
-  after that render.
+  after that render. Until then no caret is read: the input still holds the old value
+  and caret, and the `text` input does too, so comparing the two cannot catch it.
 - The input is an `hlmInput`, so `hlm-field` labels it. Outside a field, use
   `[inputId]` with `<label for>`, or `aria-label`.
 - Keys are consumed only while the listbox is on the page, and a consumed key is

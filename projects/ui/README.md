@@ -72,7 +72,8 @@ take(option: AutocompleteOption, box: HlmAutocomplete) {
 - **Outputs:** `textChange(string)`, `caretChange(number)`, `accept(option)`,
   `openChange(boolean)`.
 - **`setCaret(position)`** focuses the input and places the caret once the current `text`
-  has rendered. It does not emit `caretChange`.
+  has rendered. It does not emit `caretChange`, and until the caret lands no caret is
+  reported, so a key released before your new `text` renders does not report the old one.
 - **Options render verbatim.** They are not sorted, de-duplicated or narrowed, and nothing
   is matched against the text. Filtering is the server's job.
 - **The list shows** while `open` is `true` and there is at least one option. Opening it is
