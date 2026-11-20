@@ -33,7 +33,7 @@ interface SeenKey {
           listboxLabel="Unit suggestions"
           (textChange)="texts.push($event)"
           (caretChange)="carets.push($event)"
-          (accept)="accepted.push($event)"
+          (accept)="take($event)"
           (keydown)="seen.push({ key: $event.key, defaultPrevented: $event.defaultPrevented })"
         />
       </hlm-field>
@@ -52,8 +52,15 @@ class Host {
   readonly carets: number[] = [];
   readonly accepted: AutocompleteOption[] = [];
   readonly seen: SeenKey[] = [];
+  /** What the caller does with a taken row, e.g. splice and `setCaret`; nothing by default. */
+  onAccept: ((option: AutocompleteOption) => void) | null = null;
   /** Keys that reached an element around the control, as a dialog's handler would. */
   readonly dialog: string[] = [];
+
+  take(option: AutocompleteOption): void {
+    this.accepted.push(option);
+    this.onAccept?.(option);
+  }
 }
 
 async function setup() {
@@ -321,6 +328,42 @@ describe('HlmAutocomplete', () => {
     await fixture.whenStable();
     expect(host.carets).toEqual([]);
   });
+
+  for (const key of ['Enter', 'Tab']) {
+    it(`reports no stale caret when ${key} takes a row and is released before the new text renders`, async () => {
+      const { host, input, fixture, openList, type, press } = await setup();
+      await type('received 2 ');
+      await openList();
+      if (key === 'Enter') {
+        await press('ArrowDown');
+      }
+      host.onAccept = (option) => {
+        host.text.set(`received 2 ${option.value} `);
+        host.box().setCaret(14);
+      };
+      expect(host.carets).toEqual([11]);
+
+      // The key goes down and comes up in one task, so the keyup reads the old value and caret.
+      input().dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+      input().dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+      input().click();
+      expect(host.accepted).toEqual([UNITS[0]]);
+      expect(input().value).toBe('received 2 ');
+      expect(host.carets).toEqual([11]);
+
+      await fixture.whenStable();
+      expect(input().value).toBe('received 2 kg ');
+      expect(input().selectionStart).toBe(14);
+      expect(input().selectionEnd).toBe(14);
+      input().dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+      expect(host.carets).toEqual([11]);
+
+      // Once the caret has landed, a real move is reported again.
+      input().setSelectionRange(13, 13);
+      input().dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowLeft', bubbles: true }));
+      expect(host.carets).toEqual([11, 13]);
+    });
+  }
 
   it('keeps focus in the input when a row is pressed, and closes when focus leaves', async () => {
     const { host, input, openList, options, fixture } = await setup();

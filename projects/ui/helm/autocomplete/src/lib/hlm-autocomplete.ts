@@ -187,7 +187,7 @@ export class HlmAutocomplete {
   /** What the user typed, unmodified. */
   readonly textChange = output<string>();
 
-  /** The caret moved (typing, arrows, Home, End, a click). Not emitted for `setCaret`. */
+  /** The caret moved (typing, arrows, Home, End, a click). Not emitted for `setCaret`, nor before its caret lands. */
   readonly caretChange = output<number>();
 
   /** A row was taken by Enter, Tab or a click. The caller splices; the text is not touched here. */
@@ -217,6 +217,9 @@ export class HlmAutocomplete {
 
   /** The last caret reported or set, so an unchanged caret is not reported twice. */
   private _caret = -1;
+
+  /** A `setCaret` has not landed: the input still holds the old text and caret, so a read is stale. */
+  private _placing = false;
 
   protected readonly _width = injectElementSize();
 
@@ -274,12 +277,14 @@ export class HlmAutocomplete {
   /** Focuses the input and puts the caret at `position` once the current `text` is rendered. */
   setCaret(position: number): void {
     this._caret = position;
+    this._placing = true;
     afterNextRender(
       {
         write: () => {
           const field = this._field().nativeElement;
           field.focus();
           field.setSelectionRange(position, position);
+          this._placing = false;
         },
       },
       { injector: this._injector },
@@ -292,6 +297,9 @@ export class HlmAutocomplete {
   }
 
   protected _reportCaret(): void {
+    if (this._placing) {
+      return;
+    }
     const field = this._field().nativeElement;
     const caret =
       (field.selectionDirection === 'backward' ? field.selectionStart : field.selectionEnd) ??
