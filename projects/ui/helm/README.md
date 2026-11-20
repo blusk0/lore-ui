@@ -113,6 +113,10 @@ it**. Not `HlmCombobox`, which chooses one option and restores its label on Esca
   Escape, and the caller's `(keydown)` sees only keys the control did not take.
 - No exit animation. The overlay detaches on the next render, so a second Escape
   reaches the dialog straight away.
+- Hover and the highlight are two channels: hover is `hover:bg-muted` (neutral) and
+  never moves the highlight, and only `data-highlighted` takes `bg-accent` (a primary
+  tint), as the table keeps hover off `--accent`. Both rules have the same specificity
+  and the highlight's comes later, so a hovered highlighted row paints `--accent`.
 
 ## Version note (spartan 1.1)
 

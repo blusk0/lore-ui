@@ -84,8 +84,9 @@ take(option: AutocompleteOption, box: HlmAutocomplete) {
   your `(keydown)` never sees that key. Enter with nothing highlighted, every key while the
   list is closed, and any key with a modifier pass through untouched.
 - **Nothing is highlighted until an arrow key is pressed**, and a new `options` array clears
-  the highlight. Pointer hover paints a row but does not highlight it, so Enter after typing
-  always reaches you.
+  the highlight. Pointer hover does not highlight a row, so Enter after typing always
+  reaches you. It paints a neutral `--muted` fill, and only the highlighted row takes
+  `--accent`, so the pointer's row and the keyboard's row never look alike.
 - **ARIA:** the input has `role="combobox"`, `aria-autocomplete="list"`, `aria-expanded`,
   and `aria-controls` only while a listbox is on the page. `aria-activedescendant` points at
   the highlighted row. The listbox is named by `listboxLabel`, and each row is
