@@ -347,6 +347,32 @@ describe('HlmAutocomplete', () => {
     expect(listbox()).toBeNull();
   });
 
+  it('paints the keyboard row with --accent and a hovered row with a different, neutral fill', async () => {
+    const { openList, press, options, input, fixture } = await setup();
+    await openList();
+    await press('ArrowDown');
+
+    // Pointing at another row leaves the highlight and the active descendant where they were.
+    options()[1].dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    options()[1].dispatchEvent(new MouseEvent('mouseenter'));
+    options()[1].dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
+    await fixture.whenStable();
+    const [active, hovered] = options();
+    expect(active.hasAttribute('data-highlighted')).toBe(true);
+    expect(hovered.hasAttribute('data-highlighted')).toBe(false);
+    expect(hovered.getAttribute('aria-selected')).toBe('false');
+    expect(input().getAttribute('aria-activedescendant')).toBe(active.id);
+
+    // jsdom applies no :hover, so read what each state paints off the classes it would apply.
+    const paints = (row: HTMLElement, variant: string) =>
+      [...row.classList].filter((c) => c.startsWith(variant)).map((c) => c.slice(variant.length));
+    const activeFill = paints(active, 'data-[highlighted]:');
+    const hoverFill = paints(hovered, 'hover:');
+    expect(activeFill).toEqual(['bg-accent', 'text-accent-foreground']);
+    expect(hoverFill).toEqual(['bg-muted']);
+    expect(hoverFill.some((c) => activeFill.includes(c))).toBe(false);
+  });
+
   it('paints only from the token layer, and reports no axe violations, closed or open', async () => {
     const { el, openList, press } = await setup();
     expectOnlyTokenColours(el);

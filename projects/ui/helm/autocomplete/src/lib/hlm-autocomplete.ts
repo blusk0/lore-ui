@@ -249,7 +249,8 @@ export class HlmAutocomplete {
 
   protected readonly _optionClass = hlm(
     'relative flex w-full cursor-default items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm outline-hidden select-none',
-    'hover:bg-accent hover:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground',
+    // Hover is a neutral fill and never the highlight, so only the keyboard's row takes --accent.
+    'hover:bg-muted data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground',
   );
 
   constructor() {
